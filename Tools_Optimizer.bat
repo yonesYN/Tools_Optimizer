@@ -35,8 +35,8 @@ goto adminCheck
 	IF %M%==1 GOTO network
 	IF %M%==2 GOTO set_dns
 	IF %M%==3 GOTO stop_service
-	IF %M%==4 GOTO stop_service_not
-	IF %M%==5 GOTO stop_service_pc
+	IF %M%==4 GOTO stop_service_2
+	IF %M%==5 GOTO stop_service_3
 	IF %M%==6 GOTO update_fix
 	IF %M%==7 GOTO WinSxS_Cleanup
 	GOTO Min_Menu
@@ -282,9 +282,9 @@ goto adminCheck
 	echo Stoping Service...
 	goto re
 
-:stop_service_not
+:stop_service_2
 	cls
-	TITLE "Stop Windows Services NoteBook"
+	TITLE "Stop Windows Services"
 	color 3
 	echo Stoping Service...
 	sc config "CDPSvc" start= disabled >nul
@@ -305,7 +305,6 @@ goto adminCheck
 
 	sc config "swprv" start= disabled >nul
 	sc config "RmSvc" start= demand >nul
-	color b
 	sc stop "CDPSvc" >nul
 	sc stop "DusmSvc" >nul
 	sc stop "DPS" >nul
@@ -320,12 +319,11 @@ goto adminCheck
 	sc start "WlanSvc" >nul
 	sc start "NlaSvc" >nul
 	sc start "netprofm" >nul
-
 	sc stop "swprv" >nul
 	goto re
-:stop_service_pc
+:stop_service_3
 	cls
-	TITLE "Stop Windows Services pc"
+	TITLE "Stop Windows Services"
 	color 3
 	echo Stoping Service...
 	sc config "CDPSvc" start= disabled >nul
@@ -345,7 +343,6 @@ goto adminCheck
 	sc config "swprv" start= disabled >nul
 	sc config "RmSvc" start= disabled >nul
 	sc config "cbdhsvc_212fe" start= disabled >nul
-	color b
 	sc stop "CDPSvc" >nul
 	sc stop "DusmSvc" >nul
 	sc stop "DPS" >nul
