@@ -100,39 +100,15 @@ goto adminCheck
 	GOTO Logo
 :Logo
 	cls
-	mode con: cols=135 lines=36
 	color 06
-	echo              .::-------------------.        `-:----------------:::::///////+:`                           .:++/////////+++o-`           
-	echo             `-oooooooooooooo++/////-        `:++++++++oooooo+/////+osyhhyhhhho.                          ./ooosyhhhhhyssss:`           
-	echo               `..:+yyyyyyyyy+-````            ```.-/osssso+-.`     `.+hhhhyhhhy:`                             `-yddms.``               
-	echo                   `/yddddddds-                     -shhho-`          -yddhhhhhdh+.                             `oNNN:                  
-	echo                     -ydmmmmmds-                   .+ddho.            -hNmddddddmmy:`                           `oMMM:                  
-	echo                      -ydmmmmmds.                 .+dmh+`             :dMNysmmmmmNNd+.                          `+MMM-                  
-	echo                       -ydmmmmmds.               .+dmh+`              :dMNs`/mNNNNMMNy-                         `/MMM.                  
-	echo                        -ydmmmmmdo.             .+dmh/                :dMNs  -hNMMMMMMd+`                       `/MMM.                  
-	echo                         -ymmmmmmdo`           .odmy:                 :dMNs   `sNMMMMMMNs.                      `:MMM`                  
-	echo                          :ymmmmmmdo`         .oddy:                  :dMNs     :dMMMMMMMd/                      :MMM`                  
-	echo                           :ymmmmmmdo`       .oddy-                   :dMNo      .sNMMMMMMms.                   `:MMM`                  
-	echo                            /hmmmmmmd+`     .sdds-                    :dMNo       `/dMMMMMMNh:                  `:MMM`                  
-	echo                            `/hmmmmmmd+    .sdds-                     :dMNo         -yNMMMMMMmo`                `:MMM`                  
-	echo                             `/hmmmmmmd+  -ydms-                      :dMNo          `+dMMMMMMNh-               `:MMM`                  
-	echo                              `/dmmmmmmd/:ydmy-                       :dMNo            :yNMMMMMMm/`             `:MMM`                  
-	echo                               `+dmmmmmmddmmy-                        :dMNo             .+mMMMMMMNs.            `/MMM`                  
-	echo                                .+dmmmmmmmmy-                         :dMNo              `:hMMMMMMMd:`          `/MMM`                  
-	echo                                 .ommmmmmmd:                          :dMNo                .oNMMMMMMNo.         `/MMM`                  
-	echo                                  -dmmmmmmy.                          :dMNo                 `:dMMMMMMMh:`       `/MMM`                  
-	echo                                  -hmmmmmms`                          :dMNo                   .sNMMMMMMmo.      `/MMM`                  
-	echo                                  -hmmmmmmo`                          :dMNo                    `:mMMMMMMNh:     `/MMM`                  
-	echo                                  -hmmmmmmo`                          :dMNo                      .yNMMMMMMm+.   `/MMM`                  
-	echo                                  -hmmmmmmo`                          :mMNs                       `+mMMMMMMNy:  `/MMM`                  
-	echo                                  -hmmmmmmo`                          :mMNs                         -yNMMMMMMmo``/MMM`                  
-	echo                                  -hmmmmmmo`                          /mMNy                          `+dMMMMMMNh/oMMM.                  
-	echo                                  -hmmmmmms`                          /NMMh                            -yNMMMMMMNmMMM.                  
-	echo                                  -dmmmmmmh.                          /NMMd                             `+mMMMMMMMMMM.                  
-	echo                                `-smmmmmmmms-.`                      .oMMMm.                              -yNMMMMMMMM-                  
-	echo                          ./++osydmmmmmmmmmmdhyso+:`            -//+shNMMMMds+//:`                         `+mMMMMMMM-                  
-	echo                          /ydddddddddddddddddddddds-           `ymmmmmmmmmmmmmmmd.                           -smNNMMM:                  
-	echo                          `.......................`             `````````````````                              `.-/os.                  
+	ECHO Y88b   d88P 888b    888 
+	ECHO  Y88b d88P  8888b   888 
+	ECHO   Y88o88P   88888b  888 
+	ECHO    Y888P    888Y88b 888 
+	ECHO     888     888 Y88b888 
+	ECHO     888     888  Y88888 
+	ECHO     888     888   Y8888 
+	ECHO     888     888    Y888
 	timeout 2 >nul
 	GOTO Min_Menu
 :set_dns
