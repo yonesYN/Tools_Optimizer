@@ -25,8 +25,8 @@ goto adminCheck
 	ECHO [1] "Reset Network & Optimiz"
 	ECHO [2] "Set DNS"
 	ECHO [3] "Stop Services (recommended)"
-	ECHO [4] "Stop Services Lvl2"
-	ECHO [5] "Stop Services Lvl3"
+	ECHO [4] "Stop Services L2"
+	ECHO [5] "Stop Services L3"
 	ECHO [6] "Fix Windows Update"
 	ECHO [7] "WinSxS Cleanup"
 	
