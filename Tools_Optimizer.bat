@@ -1,10 +1,10 @@
 @ECHO off
-goto adminCheck
+GOTO adminCheck
 :adminCheck
 	mode con: cols=80 lines=15
     net session >nul 2>&1
     IF %errorLevel% == 0 (
-		goto Min_Menu
+		GOTO Min_Menu
     ) ELSE (
         ECHO Please Run as administrator
 		:notAdmin
@@ -14,7 +14,7 @@ goto adminCheck
 			title not_admin
 			color b
 			timeout 1 >nul
-			goto notAdmin
+			GOTO notAdmin
     )
 :Min_Menu
 	cls
@@ -29,7 +29,7 @@ goto adminCheck
 	ECHO [5] "Stop Services L3"
 	ECHO [6] "Fix Windows Update"
 	ECHO [7] "WinSxS Cleanup"
-	
+
 	SET /A M=o >nul
 	SET /p M=type :
 	IF %M%==1 GOTO network
@@ -41,16 +41,26 @@ goto adminCheck
 	IF %M%==7 GOTO WinSxS_Cleanup
 	GOTO Min_Menu
 :network
-	cls
-	title "Reset Network & Optimiz"
-	color 01
+	title "Network"
+	COLOR B
+	mode con: cols=80 lines=15
+	CLS
+	ECHO [1] "Reset Network"
+	ECHO [2] "Optimiz Network"
+
+	SET /A M=o >nul
+	SET /p M=type :
+	IF %M%==1 GOTO r_net
+	IF %M%==2 GOTO opt_net
+	GOTO Min_Menu
+	:r_net
+	mode con: cols=80 lines=15
+	CLS
 	ipconfig /release
 	ipconfig /flushdns
-	ipconfig /registerdns
 	ipconfig /renew
 	netsh interface ipv4 reset
 	netsh interface ipv6 reset
-	ipconfig /flushdns
 	nbtstat –r
 	netsh int ip reset
 	netsh winsock reset
@@ -58,6 +68,12 @@ goto adminCheck
 	netsh winsock reset proxy
 	netsh int ip reset c:\resetlog.txt
 	ipconfig /flushdns
+	netsh int ip reset all
+	shutdown /r /t 300 /c "It will restart in 5 minutes"
+	GOTO Logo
+	:opt_net
+	mode con: cols=80 lines=15
+	CLS
 	netsh int tcp set global autotuninglevel=normal
 	netsh interface 6to4 set state disabled
 	netsh int tcp set global timestamps=disabled
@@ -99,6 +115,7 @@ goto adminCheck
 	RMDIR "%LOCALAPPDATA%\CrashDumps\" /S /Q >nul
 	GOTO Logo
 :Logo
+	mode con: cols=80 lines=15
 	cls
 	color 06
 	ECHO Y88b   d88P 888b    888 
@@ -115,9 +132,10 @@ goto adminCheck
 	TITLE "Set DNS"
 	COLOR B
 	GOTO M
-	:M
-	mode con: cols=80 lines=16
 	ipconfig /flushdns >null
+	:M
+	CLS
+	mode con: cols=80 lines=16
 	powershell -command "Get-DnsClientServerAddress"|findstr /r "[0-9]\." > %temp%\dns.txt
 
 	SET /p sdns=<%temp%\dns.txt
@@ -206,7 +224,7 @@ goto adminCheck
 	TITLE "Default DNS"
 	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder () >nul
 	GOTO FL
-	
+
 	:Custom_DNS
 	CLS
 	COLOR D
@@ -277,91 +295,94 @@ goto adminCheck
 
 :stop_service
 	cls
-	TITLE "Stop Windows Services (recommended)"
+	TITLE "Stop Windows Services(Recommended)"
 	color 3
 	echo Stoping Service...
 	goto re
 
 :stop_service_2
 	cls
-	TITLE "Stop Windows Services"
+	TITLE "Stop Windows Services(LVL2)"
 	color 3
 	echo Stoping Service...
-	sc config "CDPSvc" start= disabled >nul
-	sc config "DusmSvc" start= disabled >nul
-	sc config "DPS" start= disabled >nul
-	sc config "TokenBroker" start= disabled >nul
-	sc config "WpnService" start= disabled >nul
-	sc config "InstallService" start= disabled >nul
-	sc config "UsoSvc" start= disabled >nul
-	sc config "RasMan" start= disabled >nul
-	sc config "wuauserv" start= disabled >nul
-	
-	sc config "NcbService" start= disabled >nul
-	sc config "WlanSvc" start= auto >nul
-	sc config "RmSvc" start= auto >nul
-	sc config "NlaSvc" start= demand >nul
-	sc config "netprofm" start= demand >nul
+	sc config CDPSvc start= disabled >nul
+	sc config DusmSvc start= disabled >nul
+	sc config DPS start= disabled >nul
+	sc config TokenBroker start= disabled >nul
+	sc config WpnService start= disabled >nul
+	sc config InstallService start= disabled >nul
+	sc config UsoSvc start= disabled >nul
+	sc config RasMan start= disabled >nul
+	sc config wuauserv start= disabled >nul
+	sc config NcbService start= disabled >nul
+	sc config swprv start= disabled >nul
 
-	sc config "swprv" start= disabled >nul
-	sc config "RmSvc" start= demand >nul
-	sc stop "CDPSvc" >nul
-	sc stop "DusmSvc" >nul
-	sc stop "DPS" >nul
-	sc stop "TokenBroker" >nul
-	sc stop "WpnService" >nul
-	sc stop "InstallService" >nul
-	sc stop "UsoSvc" >nul
-	sc stop "NcbService" >nul
-	sc stop "RasMan" >nul
-	sc stop "wuauserv" >nul
-	sc stop "uhssvc" >nul
-	sc start "WlanSvc" >nul
-	sc start "NlaSvc" >nul
-	sc start "netprofm" >nul
-	sc stop "swprv" >nul
+	sc config WlanSvc start= auto >nul
+	sc config NlaSvc start= demand >nul
+	sc config netprofm start= demand >nul
+	sc config RmSvc start= demand >nul
+	sc stop CDPSvc >nul
+	sc stop DusmSvc >nul
+	sc stop DPS >nul
+	sc stop TokenBroker >nul
+	sc stop WpnService >nul
+	sc stop InstallService >nul
+	sc stop UsoSvc >nul
+	sc stop NcbService >nul
+	sc stop RasMan >nul
+	sc stop wuauserv >nul
+	sc stop uhssvc >nul
+	sc start "WlanSvc >nul
+	sc start "NlaSvc >nul
+	sc start "netprofm >nul
+	sc stop swprv >nul
 	goto re
 :stop_service_3
 	cls
-	TITLE "Stop Windows Services"
+	TITLE "Stop Windows Services(LVL3)"
 	color 3
 	echo Stoping Service...
-	sc config "CDPSvc" start= disabled >nul
-	sc config "DusmSvc" start= disabled >nul
-	sc config "DPS" start= disabled >nul
-	sc config "netprofm" start= disabled >nul
-	sc config "NlaSvc" start= disabled >nul
-	sc config "TokenBroker" start= disabled >nul
-	sc config "WpnService" start= disabled >nul
-	sc config "WpnUserService_30b5f" start= disabled >nul
-	sc config "InstallService" start= disabled >nul
-	sc config "UsoSvc" start= disabled >nul
-	sc config "NcbService" start= disabled >nul
-	sc config "RasMan" start= disabled >nul
-	sc config "wuauserv" start= disabled >nul
-	sc config "PSEXESVC" start= disabled >nul
-	sc config "swprv" start= disabled >nul
-	sc config "RmSvc" start= disabled >nul
-	sc config "cbdhsvc_212fe" start= disabled >nul
-	sc stop "CDPSvc" >nul
-	sc stop "DusmSvc" >nul
-	sc stop "DPS" >nul
-	sc stop "netprofm" >nul
-	sc stop "NlaSvc" >nul
-	sc stop "TokenBroker" >nul
-	sc stop "WpnService" >nul
-	sc stop "WpnUserService_30b5f" >nul
-	sc stop "InstallService" >nul
-	sc stop "UsoSvc" >nul
-	sc stop "NcbService" >nul
-	sc stop "RasMan" >nul
-	sc stop "wuauserv" >nul
-	sc stop "uhssvc" >nul
-	sc stop "PSEXESVC" >nul
-	sc stop "AppXSvc" >nul
-	sc stop "swprv" >nul
-	sc stop "cbdhsvc_212fe" >nul
-	sc stop "Dhcp" >nul
+	sc config CDPSvc start= disabled >nul
+	sc config DusmSvc start= disabled >nul
+	sc config DPS start= disabled >nul
+	sc config netprofm start= disabled >nul
+	sc config NlaSvc start= disabled >nul
+	sc config TokenBroker start= disabled >nul
+	sc config WpnService start= disabled >nul
+	sc config InstallService start= disabled >nul
+	sc config UsoSvc start= disabled >nul
+	sc config NcbService start= disabled >nul
+	sc config RasMan start= disabled >nul
+	sc config wuauserv start= disabled >nul
+	sc config PSEXESVC start= disabled >nul
+	sc config swprv start= disabled >nul
+	sc config RmSvc start= disabled >nul
+	sc config cbdhsvc_212fe start= disabled >nul
+	sc config DsmSvc start= disabled >nul
+	sc config SENS start= disabled >nul
+	sc config smphost start= disabled >nul
+	sc config LicenseManager start= disabled >nul
+	sc stop CDPSvc >nul
+	sc stop DusmSvc >nul
+	sc stop DPS >nul
+	sc stop netprofm >nul
+	sc stop NlaSvc >nul
+	sc stop TokenBroker >nul
+	sc stop WpnService >nul
+	sc stop InstallService >nul
+	sc stop UsoSvc >nul
+	sc stop NcbService >nul
+	sc stop RasMan >nul
+	sc stop wuauserv >nul
+	sc stop uhssvc >nul
+	sc stop PSEXESVC >nul
+	sc stop AppXSvc >nul
+	sc stop swprv >nul
+	sc stop Dhcp >nul
+	sc stop DsmSvc >nul
+	sc stop SENS >nul
+	sc stop LicenseManager >nul
+	sc stop smphost >nul
 	GOTO re
 :update_fix
 	cls
@@ -394,171 +415,186 @@ goto adminCheck
 	sfc /SCANNOW
 	GOTO Logo
 :re
-	sc config "AxInstSV" start= disabled >nul
-	sc config "AJRouter" start= disabled >nul
-	sc config "ALG" start= disabled >nul
-	sc config "AppMgmt" start= disabled >nul
-	sc config "tzautoupdate" start= disabled >nul
-	sc config "BTAGService" start= disabled >nul
-	sc config "bthserv" start= disabled >nul
-	sc config "PeerDistSvc" start= disabled >nul
-	sc config "CertPropSvc" start= disabled >nul
-	sc config "DiagTrack" start= disabled >nul
-	sc config "DialogBlockingService" start= disabled >nul
-	sc config "MapsBroker" start= disabled >nul
-	sc config "Fax" start= disabled >nul
-	sc config "lfsvc" start= disabled >nul
-	sc config "vmickvpexchange" start= disabled >nul
-	sc config "vmicguestinterface" start= disabled >nul
-	sc config "vmicshutdown" start= disabled >nul
-	sc config "vmicheartbeat" start= disabled >nul
-	sc config "vmicvmsession" start= disabled >nul
-	sc config "vmicrdv" start= disabled >nul
-	sc config "vmictimesync" start= disabled >nul
-	sc config "vmicvss" start= disabled >nul
-	sc config "iphlpsvc" start= disabled >nul
-	sc config "AppVClient" start= disabled >nul
-	sc config "MSiSCSI" start= disabled >nul
-	sc config "MsKeyboardFilter" start= disabled >nul
-	sc config "NetTcpPortSharing" start= disabled >nul
-	sc config "CscService" start= disabled >nul
+	sc config AxInstSV start= disabled >nul
+	sc config AJRouter start= disabled >nul
+	sc config ALG start= disabled >nul
+	sc config AppMgmt start= disabled >nul
+	sc config tzautoupdate start= disabled >nul
+	sc config BTAGService start= disabled >nul
+	sc config bthserv start= disabled >nul
+	sc config PeerDistSvc start= disabled >nul
+	sc config CertPropSvc start= disabled >nul
+	sc config DiagTrack start= disabled >nul
+	sc config DialogBlockingService start= disabled >nul
+	sc config MapsBroker start= disabled >nul
+	sc config Fax start= disabled >nul
+	sc config lfsvc start= disabled >nul
+	sc config vmickvpexchange start= disabled >nul
+	sc config vmicguestinterface start= disabled >nul
+	sc config vmicshutdown start= disabled >nul
+	sc config vmicheartbeat start= disabled >nul
+	sc config vmicvmsession start= disabled >nul
+	sc config vmicrdv start= disabled >nul
+	sc config vmictimesync start= disabled >nul
+	sc config vmicvss start= disabled >nul
+	sc config iphlpsvc start= disabled >nul
+	sc config AppVClient start= disabled >nul
+	sc config MSiSCSI start= disabled >nul
+	sc config MsKeyboardFilter start= disabled >nul
+	sc config NetTcpPortSharing start= disabled >nul
+	sc config CscService start= disabled >nul
 	sc config "ssh-agent" start= disabled >nul
-	sc config "PNRPsvc" start= disabled >nul
-	sc config "p2psvc" start= disabled >nul
-	sc config "p2pimsvc" start= disabled >nul
-	sc config "PolicyAgent" start= disabled >nul
-	sc config "PhoneSvc" start= disabled >nul
-	sc config "Spooler" start= disabled >nul
-	sc config "PcaSvc" start= disabled >nul
-	sc config "SessionEnv" start= disabled >nul
-	sc config "TermService" start= disabled >nul
-	sc config "UmRdpService" start= disabled >nul
-	sc config "RpcLocator" start= disabled >nul
-	sc config "RemoteRegistry" start= disabled >nul
-	sc config "RetailDemo" start= disabled >nul
-	sc config "RemoteAccess" start= disabled >nul
-	sc config "seclogon" start= disabled >nul
-	sc config "shpamsvc" start= disabled >nul
-	sc config "SCardSvr" start= disabled >nul
-	sc config "ScDeviceEnum" start= disabled >nul
-	sc config "SCPolicySvc" start= disabled >nul
-	sc config "SNMPTRAP" start= disabled >nul
-	sc config "SSDPSRV" start= disabled >nul
-	sc config "TabletInputService" start= disabled >nul
-	sc config "upnphost" start= disabled >nul
-	sc config "UevAgentService" start= disabled >nul
-	sc config "VSS" start= disabled >nul
-	sc config "WebClient" start= disabled >nul
-	sc config "WbioSrvc" start= disabled >nul
-	sc config "wcncsvc" start= disabled >nul
-	sc config "WerSvc" start= disabled >nul
-	sc config "wisvc" start= disabled >nul
-	sc config "WMPNetworkSvc" start= disabled >nul
-	sc config "icssvc" start= disabled >nul
-	sc config "WinRM" start= disabled >nul
-	sc config "WSearch" start= disabled >nul
-	sc config "wlidsvc" start= disabled >nul
-	sc config "XboxGipSvc" start= disabled >nul
-	sc config "XblAuthManager" start= disabled >nul
-	sc config "XblGameSave" start= disabled >nul
-	sc config "XboxNetApiSvc" start= disabled >nul
-	sc config "cloudidsvc" start= disabled >nul
-	sc config "WpcMonSvc" start= disabled >nul
+	sc config PNRPsvc start= disabled >nul
+	sc config p2psvc start= disabled >nul
+	sc config p2pimsvc start= disabled >nul
+	sc config PolicyAgent start= disabled >nul
+	sc config PhoneSvc start= disabled >nul
+	sc config Spooler start= disabled >nul
+	sc config PcaSvc start= disabled >nul
+	sc config SessionEnv start= disabled >nul
+	sc config TermService start= disabled >nul
+	sc config UmRdpService start= disabled >nul
+	sc config RpcLocator start= disabled >nul
+	sc config RemoteRegistry start= disabled >nul
+	sc config RetailDemo start= disabled >nul
+	sc config diagnosticshub.standardcollector.service start= disabled >nul
+	sc config RemoteAccess start= disabled >nul
+	sc config seclogon start= disabled >nul
+	sc config shpamsvc start= disabled >nul
+	sc config SCardSvr start= disabled >nul
+	sc config ScDeviceEnum start= disabled >nul
+	sc config SCPolicySvc start= disabled >nul
+	sc config SNMPTRAP start= disabled >nul
+	sc config SSDPSRV start= disabled >nul
+	sc config TabletInputService start= disabled >nul
+	sc config upnphost start= disabled >nul
+	sc config UevAgentService start= disabled >nul
+	sc config VSS start= disabled >nul
+	sc config WebClient start= disabled >nul
+	sc config WbioSrvc start= disabled >nul
+	sc config wcncsvc start= disabled >nul
+	sc config WerSvc start= disabled >nul
+	sc config wisvc start= disabled >nul
+	sc config WMPNetworkSvc start= disabled >nul
+	sc config icssvc start= disabled >nul
+	sc config WinRM start= disabled >nul
+	sc config WSearch start= disabled >nul
+	sc config wlidsvc start= disabled >nul
+	sc config XboxGipSvc start= disabled >nul
+	sc config XblAuthManager start= disabled >nul
+	sc config XblGameSave start= disabled >nul
+	sc config XboxNetApiSvc start= disabled >nul
+	sc config cloudidsvc start= disabled >nul
+	sc config WpcMonSvc start= disabled >nul
 	sc config "AMD Crash Defender Service" start= disabled >nul
 	sc config "AMD External Events Utility" start= disabled >nul
-	sc config "WiaRpc" start= disabled >nul
-	sc config "QWAVE" start= disabled >nul
-	sc config "KtmRm" start= disabled >nul
-	sc config "TrkWks" start= disabled >nul
-	sc config "StorSvc" start= disabled >nul
-	sc config "pla" start= disabled >nul
-	sc config "fhsvc" start= disabled >nul
-	sc config "RasAuto" start= disabled >nul
-	sc config "stisvc" start= disabled >nul
+	sc config WiaRpc start= disabled >nul
+	sc config QWAVE start= disabled >nul
+	sc config KtmRm start= disabled >nul
+	sc config TrkWks start= disabled >nul
+	sc config StorSvc start= disabled >nul
+	sc config pla start= disabled >nul
+	sc config fhsvc start= disabled >nul
+	sc config RasAuto start= disabled >nul
+	sc config stisvc start= disabled >nul
 	sc config "NvTelemetryContainer" start= disabled >nul
-	sc config "PrintNotify" start= disable >nul
-	sc stop "AxInstSV" >nul
-	sc stop "AJRouter" >nul
-	sc stop "ALG" >nul
-	sc stop "AppMgmt" >nul
-	sc stop "tzautoupdate" >nul
-	sc stop "BTAGService" >nul
-	sc stop "bthserv" >nul
-	sc stop "PeerDistSvc" >nul
-	sc stop "CertPropSvc" >nul
-	sc stop "DiagTrack" >nul
-	sc stop "DialogBlockingService" >nul
-	sc stop "MapsBroker" >nul
-	sc stop "Fax" >nul
-	sc stop "lfsvc" >nul
-	sc stop "vmickvpexchange" >nul
-	sc stop "vmicguestinterface" >nul
-	sc stop "vmicshutdown" >nul
-	sc stop "vmicheartbeat" >nul
-	sc stop "vmicvmsession" >nul
-	sc stop "vmicrdv" >nul
-	sc stop "vmictimesync" >nul
-	sc stop "vmicvss" >nul
-	sc stop "iphlpsvc" >nul
-	sc stop "AppVClient" >nul
-	sc stop "MSiSCSI" >nul
-	sc stop "MsKeyboardFilter" >nul
-	sc stop "NetTcpPortSharing" >nul
-	sc stop "CscService" >nul
+	sc config PrintNotify start= disable >nul
+	sc config dmwappushservice start= disable >nul
+	sc config SmsRouter start= disable >nul
+
+	sc config HomeGroupListener start= disabled >nul
+	sc config HomeGroupProvider start= disabled >nul
+	sc config SharedAccess start= disabled >nul
+	sc config wscsvc start= disabled >nul
+	sc config VaultSvc start= demand >nul
+	sc config HvHost start= disabled >nul
+	sc config BthAvctpSvc start= disabled >nul
+
+	sc stop AxInstSV >nul
+	sc stop AJRouter >nul
+	sc stop ALG >nul
+	sc stop AppMgmt >nul
+	sc stop tzautoupdate >nul
+	sc stop BTAGService >nul
+	sc stop bthserv >nul
+	sc stop PeerDistSvc >nul
+	sc stop CertPropSvc >nul
+	sc stop DiagTrack >nul
+	sc stop DialogBlockingService >nul
+	sc stop MapsBroker >nul
+	sc stop Fax >nul
+	sc stop lfsvc >nul
+	sc stop vmickvpexchange >nul
+	sc stop vmicguestinterface >nul
+	sc stop vmicshutdown >nul
+	sc stop vmicheartbeat >nul
+	sc stop vmicvmsession >nul
+	sc stop vmicrdv >nul
+	sc stop vmictimesync >nul
+	sc stop vmicvss >nul
+	sc stop iphlpsvc >nul
+	sc stop AppVClient >nul
+	sc stop MSiSCSI >nul
+	sc stop MsKeyboardFilter >nul
+	sc stop NetTcpPortSharing >nul
+	sc stop CscService >nul
 	sc stop "ssh-agent" >nul
-	sc stop "PNRPsvc" >nul
-	sc stop "p2psvc" >nul
-	sc stop "p2pimsvc" >nul
-	sc stop "PolicyAgent" >nul
-	sc stop "PhoneSvc" >nul
-	sc stop "Spooler" >nul
-	sc stop "PcaSvc" >nul
-	sc stop "SessionEnv" >nul
-	sc stop "TermService" >nul
-	sc stop "UmRdpService" >nul
-	sc stop "RpcLocator" >nul
-	sc stop "RemoteRegistry" >nul
-	sc stop "RetailDemo" >nul
-	sc stop "RemoteAccess" >nul
-	sc stop "seclogon" >nul
-	sc stop "shpamsvc" >nul
-	sc stop "SCardSvr" >nul
-	sc stop "ScDeviceEnum" >nul
-	sc stop "SCPolicySvc" >nul
-	sc stop "SNMPTRAP" >nul
-	sc stop "SSDPSRV" >nul
-	sc stop "TabletInputService"
-	sc stop "upnphost" >nul
-	sc stop "UevAgentService" >nul
-	sc stop "VSS" >nul
-	sc stop "WebClient" >nul
-	sc stop "WbioSrvc" >nul
-	sc stop "wcncsvc" >nul
-	sc stop "WerSvc" >nul
-	sc stop "wisvc" >nul
-	sc stop "WMPNetworkSvc" >nul
-	sc stop "wlidsvc" >nul
-	sc stop "W32Time" >nul
-	sc stop "Themes" >nul
-	sc stop "icssvc" >nul
-	sc stop "WinRM" >nul
-	sc stop "WSearch" >nul
-	sc stop "XboxGipSvc" >nul
-	sc stop "XblAuthManager" >nul
-	sc stop "XblGameSave" >nul
-	sc stop "XboxNetApiSvc" >nul
-	sc stop "cloudidsvc" >nul
-	sc stop "WpcMonSvc" >nul
-	sc stop "WiaRpc" >nul
-	sc stop "QWAVE" >nul
-	sc stop "KtmRm" >nul
-	sc stop "TrkWks" >nul
-	sc stop "StorSvc" >nul
-	sc stop "pla" >nul
-	sc stop "fhsvc" >nul
-	sc stop "RasAuto" >nul
-	sc stop "stisvc" >nul
-	sc stop "embeddedmode" >nul
+	sc stop PNRPsvc >nul
+	sc stop p2psvc >nul
+	sc stop p2pimsvc >nul
+	sc stop PolicyAgent >nul
+	sc stop PhoneSvc >nul
+	sc stop Spooler >nul
+	sc stop PcaSvc >nul
+	sc stop SessionEnv >nul
+	sc stop TermService >nul
+	sc stop UmRdpService >nul
+	sc stop RpcLocator >nul
+	sc stop RemoteRegistry >nul
+	sc stop RetailDemo >nul
+	sc stop RemoteAccess >nul
+	sc stop seclogon >nul
+	sc stop shpamsvc >nul
+	sc stop SCardSvr >nul
+	sc stop ScDeviceEnum >nul
+	sc stop SCPolicySvc >nul
+	sc stop SNMPTRAP >nul
+	sc stop SSDPSRV >nul
+	sc stop TabletInputService >nul
+	sc stop upnphost >nul
+	sc stop UevAgentService >nul
+	sc stop VSS >nul
+	sc stop WebClient >nul
+	sc stop WbioSrvc >nul
+	sc stop wcncsvc >nul
+	sc stop WerSvc >nul
+	sc stop wisvc >nul
+	sc stop WMPNetworkSvc >nul
+	sc stop wlidsvc >nul
+	sc stop W32Time >nul
+	sc stop Themes >nul
+	sc stop icssvc >nul
+	sc stop WinRM >nul
+	sc stop WSearch >nul
+	sc stop XboxGipSvc >nul
+	sc stop XblAuthManager >nul
+	sc stop XblGameSave >nul
+	sc stop XboxNetApiSvc >nul
+	sc stop cloudidsvc >nul
+	sc stop WpcMonSvc >nul
+	sc stop WiaRpc >nul
+	sc stop QWAVE >nul
+	sc stop KtmRm >nul
+	sc stop TrkWks >nul
+	sc stop StorSvc >nul
+	sc stop pla >nul
+	sc stop fhsvc >nul
+	sc stop RasAuto >nul
+	sc stop stisvc >nul
+	sc stop embeddedmode >nul
 	sc stop "NvTelemetryContainer" >nul
-	sc stop "PrintNotify" >nul
+	sc stop PrintNotify >nul
+	sc stop dmwappushservice >nul
+	sc stop BthAvctpSvc >nul
+	sc stop SmsRouter >nul
 	goto Logo
