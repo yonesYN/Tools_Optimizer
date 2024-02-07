@@ -1,5 +1,5 @@
 @ECHO off
-GOTO MinMenu
+GOTO aCheck
 :aCheck
 	mode con: cols=83 lines=17
     net session >nul 2>&1
