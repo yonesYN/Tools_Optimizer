@@ -1,5 +1,5 @@
 @ECHO off
-GOTO aCheck
+GOTO MinMenu
 :aCheck
 	mode con: cols=83 lines=17
     net session >nul 2>&1
@@ -165,7 +165,7 @@ GOTO aCheck
 	SET "Index_ie=%Index_ie: =%"
 	wmic nic where "Index=%Index_ie%" get NetConnectionID|findstr /v "NetConnectionID" > %temp%\name_interface.txt
 	SET /p Index_ie=<%temp%\name_interface.txt
-	SET "Index_ie=%Index_ie: =%"
+	SET "Index_ie=%Index_ie:     =%"
 	powershell -command "Get-DnsClientServerAddress"|findstr /B "%Index_ie%" > %temp%\dns.txt
 
 	SET /p sdns=<%temp%\dns.txt
