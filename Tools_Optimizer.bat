@@ -1,21 +1,11 @@
 @ECHO off
+net session >nul 2>&1
+IF %errorLevel% == 0 (
+	GOTO MinMenu
+)
+set "params=%*"
+cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "cmd.exe", "/k cd ""%~sdp0"" && ""%~s0"" %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
 GOTO MinMenu
-:aCheck
-	mode con: cols=83 lines=17
-    net session >nul 2>&1
-    IF %errorLevel% == 0 (
-		GOTO MinMenu
-    ) ELSE (
-        ECHO Please Run as administrator
-		:notAdmin
-			title "not_admin"
-			color 9
-			timeout /t 1 /nobreak >nul
-			title not_admin
-			color b
-			timeout /t 1 /nobreak >nul
-			GOTO notAdmin
-    )
 :MinMenu
 	TITLE %~n0
 	COLOR B
@@ -127,7 +117,7 @@ GOTO MinMenu
 	powershell -command "Disable-NetAdapterVmq -Name *"
 	powershell -command "ForEach($adapter In Get-NetAdapter){Disable-NetAdapterPowerManagement -Name $adapter.Name -ErrorAction SilentlyContinue}"
 	powershell -command "ForEach($adapter In Get-NetAdapter){Disable-NetAdapterLso -Name $adapter.Name -ErrorAction SilentlyContinue}"
-	
+
 	CLS
 	ECHO Deleting Cache Files
 	RMDIR "%systemroot%\SoftwareDistribution\" /S /Q >nul
@@ -165,7 +155,7 @@ GOTO MinMenu
 	SET "Index_ie=%Index_ie: =%"
 	wmic nic where "Index=%Index_ie%" get NetConnectionID|findstr /v "NetConnectionID" > %temp%\name_interface.txt
 	SET /p Index_ie=<%temp%\name_interface.txt
-	SET "Index_ie=%Index_ie:     =%"
+	SET "Index_ie=%Index_ie:  =%"
 	powershell -command "Get-DnsClientServerAddress"|findstr /B "%Index_ie%" > %temp%\dns.txt
 
 	SET /p sdns=<%temp%\dns.txt
@@ -355,7 +345,6 @@ GOTO MinMenu
 	sc config RasMan start= disabled >nul
 	sc config wuauserv start= disabled >nul
 	sc config NcbService start= disabled >nul
-
 	sc config WlanSvc start= auto >nul
 	sc config Dhcp start= auto >nul
 	sc config NlaSvc start= demand >nul
@@ -459,7 +448,6 @@ GOTO MinMenu
 	Dism.exe /online /Cleanup-Image /StartComponentCleanup
 	Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase
 	Dism.exe /online /Cleanup-Image /SPSuperseded
-	::sfc /SCANNOW
 	GOTO Logo
 :d_service
 sc config AdvancedSystemCareService17 start= auto
