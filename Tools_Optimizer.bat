@@ -7,13 +7,14 @@ set "params=%*"
 cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "cmd.exe", "/k cd ""%~sdp0"" && ""%~s0"" %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
 GOTO MinMenu
 :MinMenu
+	SETLOCAL ENABLEDELAYEDEXPANSION
 	TITLE %~n0
 	COLOR B
 	mode con: cols=83 lines=17
 	CLS
 	ECHO [1] "Reset Network & Optimiz"
 	ECHO [2] "Set DNS"
-	ECHO [3] "Manage Services"
+	ECHO [3] "Service Optimization"
 	ECHO [4] "Fix Windows Update"
 	ECHO [5] "WinSxS Cleanup"
 	ECHO:
@@ -109,7 +110,7 @@ GOTO MinMenu
 	Reg.exe add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "Tcp1323Opts" /t REG_DWORD /d "1" /f
 	Reg.exe add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "TcpMaxDupAcks" /t REG_DWORD /d "2" /f
 	netsh winsock set autotuning on
-	powershell -command "Disable-NetAdapterLso -Name '*'"
+	powershell -command "Disable-NetAdapterLso -Name *"
 	powershell -command "Disable-NetAdapterPowerManagement -Name *"
 	powershell -command "Enable-NetAdapterChecksumOffload -Name * "
 ::	powershell -command "Enable-NetAdapterChecksumOffload –Name * -TcpIPv4 -UdpIPv4"
@@ -155,7 +156,7 @@ GOTO MinMenu
 	SET "Index_ie=%Index_ie: =%"
 	wmic nic where "Index=%Index_ie%" get NetConnectionID|findstr /v "NetConnectionID" > %temp%\name_interface.txt
 	SET /p Index_ie=<%temp%\name_interface.txt
-	SET "Index_ie=%Index_ie:  =%"
+	SET "Index_ie=%Index_ie: =%"
 	powershell -command "Get-DnsClientServerAddress"|findstr /B "%Index_ie%" > %temp%\dns.txt
 
 	SET /p sdns=<%temp%\dns.txt
@@ -177,18 +178,23 @@ GOTO MinMenu
 	IF %dns1%==208.67.222.222 (set name=OpenDNS)
 	IF %dns1%==77.88.8.8 (set name=YandexDNS)
 	IF %dns1%==185.228.168.168 (set name=CleanBrowsing)
-	ping %dns1% -n 1|findstr /r "Reply" > %temp%\ping.txt
-	SET ping=""
+
+	ping %dns1% -n 1|findstr /r "^R" > %temp%\ping.txt
+	SET "ping="
 	SET /p ping=<%temp%\ping.txt
+	SET "pi=%ping: =" & rem "%"
 	SET "ping=%ping:*time=%"
 	SET "ping=%ping: =" & rem "%"
-	SET "pi=%ping:~1%"
-	SET "pg=%pi:ms=%"
-	SETLOCAL ENABLEDELAYEDEXPANSION > nul
-	SET "pi=!pi:%pg%=!"
-	IF "%pi%" equ "ms" (echo %name%: %sdns:,= - %		ping%ping%) else (color 04
-	ECHO %name%	: %sdns:,= - %)
-	ECHO Interface	: %Index_ie%
+
+::	SET "pi=%ping:~1%"
+::	SET "pg=%pi:ms=%"
+::	SETLOCAL ENABLEDELAYEDEXPANSION
+::	SET "pi=!pi:%pg%=!"
+
+	IF "%pi%" equ "Request" (ECHO %name%: %sdns:,= - %		ping=[31mTimeout[96m)
+	IF "%pi%" equ "Reply" (echo %name%: %sdns:,= - %		ping%ping%)
+
+	ECHO Interface: %Index_ie%
 	ECHO:
 	ECHO [1] - Default (DHCP)
 	ECHO [2] - Electro
@@ -249,13 +255,22 @@ GOTO MinMenu
 	COLOR D
 	TITLE "Custom DNS"
 	ECHO [M] MinMenu
+	SET  DNSa=o
+	SET  DNSb=o
+	
 	SET /p DNSa=DNS1:
-		IF %DNSa%==m GOTO MinMenu
-		IF %DNSa%==M GOTO MinMenu
+		IF %DNSa%==m GOTO set_dns
+		IF %DNSa%==M GOTO set_dns
+		IF %DNSa%==o GOTO set_dns
 	SET /p DNSb=DNS2:
-		IF %DNSb%==m GOTO MinMenu
-		IF %DNSb%==M GOTO MinMenu
+		IF %DNSb%==m GOTO set_dns
+		IF %DNSb%==M GOTO set_dns
+		IF %DNSb%==o GOTO FL2
 	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("%DNSa%", "%DNSb%") >nul
+	GOTO FL
+	:FL2
+	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("%DNSa%") >nul
+	pause
 	GOTO FL
 
 	:Electro
@@ -305,14 +320,14 @@ GOTO MinMenu
 	GOTO FL
 
 :M_service
-	TITLE Manage Service
+	TITLE Service Optimization
 	mode con: cols=83 lines=17
 	cls
 	ECHO:
 	ECHO [1] - Disable Service LVL1
 	ECHO [2] - Disable Service LVL2
 	ECHO [3] - Disable Service LVL3
-	ECHO [4] - Default_Service (Recommended)
+	ECHO [4] - Optimiz_Service (Recommended)
 	ECHO:
 	ECHO [M] Min Menu
 	SET /A st=o >nul
@@ -325,7 +340,7 @@ GOTO MinMenu
 
 :stop_s
 	cls
-	TITLE "Stop Windows Services(Recommended)"
+	TITLE "Stop Windows Services (LVL1)"
 	color 3
 	echo Stoping Service...
 	goto re
@@ -336,7 +351,6 @@ GOTO MinMenu
 	color 3
 	echo Stoping Service...
 	sc config CDPSvc start= disabled >nul
-	sc config DusmSvc start= disabled >nul
 	sc config DPS start= disabled >nul
 	sc config TokenBroker start= disabled >nul
 	sc config WpnService start= disabled >nul
@@ -351,7 +365,6 @@ GOTO MinMenu
 	sc config netprofm start= demand >nul
 	sc config RmSvc start= demand >nul
 	sc stop CDPSvc >nul
-	sc stop DusmSvc >nul
 	sc stop DPS >nul
 	sc stop TokenBroker >nul
 	sc stop WpnService >nul
@@ -373,7 +386,6 @@ GOTO MinMenu
 	color 3
 	echo Stoping Service...
 	sc config CDPSvc start= disabled >nul
-	sc config DusmSvc start= disabled >nul
 	sc config DPS start= disabled >nul
 	sc config netprofm start= disabled >nul
 	sc config NlaSvc start= disabled >nul
@@ -395,7 +407,6 @@ GOTO MinMenu
 	sc config Wecsvc start= disabled >nul
 ::	sc config Dhcp start= disabled >nul
 	sc stop CDPSvc >nul
-	sc stop DusmSvc >nul
 	sc stop DPS >nul
 	sc stop netprofm >nul
 	sc stop NlaSvc >nul
@@ -439,12 +450,13 @@ GOTO MinMenu
 	net start bits
 	net start msiserver
 	net start appidsvc
+	shutdown /r /t 300 /c "It will restart in 5 minutes"
 	GOTO Logo
 :WinSxS_Cleanup
 	cls
 	TITLE "WinSxS Cleanup"
 	Dism.exe /Online /Cleanup-Image /AnalyzeComponentStore
-	schtasks.exe /Run /TN "\Microsoft\Windows\Servicing\StartComponentCleanup"
+::	schtasks.exe /Run /TN "\Microsoft\Windows\Servicing\StartComponentCleanup"
 	Dism.exe /online /Cleanup-Image /StartComponentCleanup
 	Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase
 	Dism.exe /online /Cleanup-Image /SPSuperseded
@@ -466,7 +478,7 @@ sc config autotimesvc start= demand
 sc config AxInstSV start= disabled
 sc config BDESVC start= demand
 sc config BFE start= auto
-sc config BITS start= delayed-auto
+sc config BITS start= disabled
 sc config BrokerInfrastructure start= auto
 sc config BTAGService start= demand
 sc config BthAvctpSvc start= auto
@@ -479,7 +491,7 @@ sc config cloudidsvc start= demand
 sc config COMSysApp start= demand
 sc config CoreMessagingRegistrar start= auto
 sc config CryptSvc start= auto
-sc config CscService start= demand
+sc config CscService start= disabled
 sc config DcomLaunch start= auto
 sc config dcsvc start= demand
 sc config defragsvc start= demand
@@ -487,21 +499,21 @@ sc config DeviceAssociationService start= demand
 sc config DeviceInstall start= demand
 sc config DevQueryBroker start= demand
 sc config Dhcp start= auto
-sc config diagnosticshub.standardcollector.service start= demand
+sc config diagnosticshub.standardcollector.service start= disabled
 sc config diagsvc start= demand
 sc config DiagTrack start= disabled
 sc config DialogBlockingService start= disabled
 sc config DispBrokerDesktopSvc start= delayed-auto
 sc config DisplayEnhancementService start= demand
 sc config DmEnrollmentSvc start= demand
-sc config dmwappushservice start= demand
+sc config dmwappushservice start= disabled
 sc config Dnscache start= auto
 sc config DoSvc start= demand
 sc config dot3svc start= demand
 sc config DPS start= auto
 sc config DsmSvc start= demand
 sc config DsSvc start= demand
-sc config DusmSvc start= disabled
+sc config DusmSvc start= auto
 sc config Eaphost start= demand
 sc config EFS start= demand
 sc config embeddedmode start= demand
@@ -564,14 +576,14 @@ sc config PcaSvc start= demand
 sc config PeerDistSvc start= disabled
 sc config perceptionsimulation start= demand
 sc config PerfHost start= demand
-sc config PhoneSvc start= demand
+sc config PhoneSvc start= disabled
 sc config pla start= demand
 sc config PlugPlay start= demand
 sc config PNRPAutoReg start= demand
 sc config PNRPsvc start= disabled
 sc config PolicyAgent start= demand
 sc config Power start= auto
-sc config PrintNotify start= demand
+sc config PrintNotify start= disabled
 sc config ProfSvc start= auto
 sc config PushToInstall start= demand
 sc config QWAVE start= demand
@@ -586,7 +598,7 @@ sc config RpcLocator start= demand
 sc config RpcSs start= auto
 sc config RstMwService start= demand
 sc config SamSs start= auto
-sc config SCardSvr start= demand
+sc config SCardSvr start= disabled
 sc config ScDeviceEnum start= demand
 sc config Schedule start= auto
 sc config SCPolicySvc start= disabled
@@ -603,10 +615,10 @@ sc config SharedRealitySvc start= demand
 sc config ShellHWDetection start= auto
 sc config shpamsvc start= disabled
 sc config smphost start= demand
-sc config SmsRouter start= demand
+sc config SmsRouter start= disabled
 sc config SNMPTRAP start= disabled
 sc config spectrum start= demand
-sc config Spooler start= disabled
+sc config Spooler start= auto
 sc config sppsvc start= delayed-auto
 sc config SSDPSRV start= demand
 sc config SstpSvc start= demand
@@ -616,19 +628,19 @@ sc config StiSvc start= demand
 sc config StorSvc start= demand
 sc config svsvc start= demand
 sc config swprv start= demand
-sc config SysMain start= auto
+sc config SysMain start= disabled
 sc config SystemEventsBroker start= auto
-sc config TabletInputService start= disabled
+sc config TabletInputService start= demand
 sc config TapiSrv start= demand
-sc config TermService start= auto
+sc config TermService start= disabled
 sc config Themes start= auto
 sc config TieringEngineService start= demand
 sc config TimeBrokerSvc start= demand
 sc config TokenBroker start= demand
-sc config TrkWks start= auto
+sc config TrkWks start= disabled
 sc config TroubleshootingSvc start= demand
 sc config TrustedInstaller start= demand
-sc config tzautoupdate start= disabled
+sc config tzautoupdate start= demand
 sc config UevAgentService start= disabled
 sc config UmRdpService start= demand
 sc config upnphost start= demand
@@ -710,6 +722,7 @@ goto Logo
 	sc config tzautoupdate start= disabled >nul
 	sc config BTAGService start= disabled >nul
 	sc config bthserv start= disabled >nul
+	sc config DusmSvc start= disabled >nul
 	sc config PeerDistSvc start= disabled >nul
 	sc config CertPropSvc start= disabled >nul
 	sc config DiagTrack start= disabled >nul
@@ -787,9 +800,7 @@ goto Logo
 	sc config stisvc start= disabled >nul
 	sc config PrintNotify start= disable >nul
 	sc config dmwappushservice start= disable >nul
-	
 	sc config SmsRouter start= disable >nul
-
 	sc config HomeGroupListener start= disabled >nul
 	sc config HomeGroupProvider start= disabled >nul
 	sc config SharedAccess start= disabled >nul
@@ -805,6 +816,7 @@ goto Logo
 	sc stop tzautoupdate >nul
 	sc stop BTAGService >nul
 	sc stop bthserv >nul
+	sc stop DusmSvc >nul
 	sc stop PeerDistSvc >nul
 	sc stop CertPropSvc >nul
 	sc stop DiagTrack >nul
