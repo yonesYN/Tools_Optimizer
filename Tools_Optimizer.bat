@@ -270,7 +270,6 @@ GOTO MinMenu
 	GOTO FL
 	:FL2
 	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("%DNSa%") >nul
-	pause
 	GOTO FL
 
 	:Electro
