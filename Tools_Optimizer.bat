@@ -7,7 +7,6 @@ set "params=%*"
 cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "cmd.exe", "/k cd ""%~sdp0"" && ""%~s0"" %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
 GOTO MinMenu
 :MinMenu
-	SETLOCAL ENABLEDELAYEDEXPANSION
 	TITLE %~n0
 	COLOR B
 	mode con: cols=83 lines=17
@@ -69,8 +68,6 @@ GOTO MinMenu
 	netsh int tcp set global chimney=disabled
 	netsh int tcp set global ecncapability=disabled
 	netsh int tcp set global nonsackrttresiliency=disabled
-	netsh int tcp set security mpp=disabled
-	netsh int tcp set security profiles=disabled
 	netsh int ip set global icmpredirects=disabled
 	netsh int tcp set security mpp=disabled profiles=disabled
 	netsh int ip set global multicastforwarding=disabled
@@ -88,7 +85,7 @@ GOTO MinMenu
 	ipconfig /flushdns
 	ipconfig /registerdns
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "DefaultTTL" /t REG_DWORD /d "64" /f
-	reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v "NetworkThrottlingIndex" /t REG_SZ /d "ffffffff" /f
+	reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v "NetworkThrottlingIndex" /t REG_DWORD /d "4294967295" /f
 	reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v "SystemResponsiveness" /t REG_DWORD /d "0" /f
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces" /v "TCPDelAckTicks" /t REG_DWORD /d "1" /f
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "TCPDelAckTicks" /t REG_DWORD /d "1" /f
@@ -147,7 +144,6 @@ GOTO MinMenu
 	TITLE "Set DNS"
 	COLOR B
 	GOTO M
-	ipconfig /flushdns >null
 	:M
 	CLS
 	mode con: cols=83 lines=17
@@ -157,15 +153,23 @@ GOTO MinMenu
 	wmic nic where "Index=%Index_ie%" get NetConnectionID|findstr /v "NetConnectionID" > %temp%\name_interface.txt
 	SET /p Index_ie=<%temp%\name_interface.txt
 	SET "Index_ie=%Index_ie: =%"
-	powershell -command "Get-DnsClientServerAddress"|findstr /B "%Index_ie%" > %temp%\dns.txt
+	powershell -command "Get-DnsClientServerAddress"|findstr /B "%Index_ie%" | findstr IPv4 > %temp%\dns.txt
 
 	SET /p sdns=<%temp%\dns.txt
 	SET "sdns=%sdns:*{=%"
-	SET "sdns=%sdns:}=%"
 	SET "sdns=%sdns: =%"
 	SET "sdns=%sdns:	=%"
+	SET "sdns=%sdns:}=b%"
+
+	IF "%sdns%"=="b" (
+	SET "sdns=None"
+	SET "name=DNS"
+	GOTO D1)
+
+	SET "sdns=%sdns:b=%"
 	SET "dns1=%sdns:,=" & SET "dns2=%"
 	SET "name=DNS"
+
 	IF %dns1%==8.8.8.8 (set name=Google)
 	IF %dns1%==78.157.42.100 (set name=Electro)
 	IF %dns1%==78.157.42.101 (set name=Electro)
@@ -179,48 +183,49 @@ GOTO MinMenu
 	IF %dns1%==77.88.8.8 (set name=YandexDNS)
 	IF %dns1%==185.228.168.168 (set name=CleanBrowsing)
 
-	ping %dns1% -n 1|findstr /r "^R" > %temp%\ping.txt
+	ping %dns1% -n 1 -w 500|findstr /r "^R" > %temp%\ping.txt
 	SET "ping="
 	SET /p ping=<%temp%\ping.txt
 	SET "pi=%ping: =" & rem "%"
 	SET "ping=%ping:*time=%"
 	SET "ping=%ping: =" & rem "%"
-
 ::	SET "pi=%ping:~1%"
 ::	SET "pg=%pi:ms=%"
 ::	SETLOCAL ENABLEDELAYEDEXPANSION
 ::	SET "pi=!pi:%pg%=!"
 
-	IF "%pi%" equ "Request" (ECHO %name%: %sdns:,= - %		ping=[31mTimeout[96m)
-	IF "%pi%" equ "Reply" (echo %name%: %sdns:,= - %		ping%ping%)
-
+	IF "%pi%" equ "Request" (ECHO [96m%name%: %sdns:,= - %		ping=[31mTimeout[96m)
+	IF "%pi%" equ "Reply" (ECHO %name%: %sdns:,= - %		ping%ping%)
+GOTO D1
+:D1
+	IF "%sdns%"=="None" (ECHO [96mDNS: [31mNone[96m)
 	ECHO Interface: %Index_ie%
 	ECHO:
-	ECHO [1] - Default (DHCP)
-	ECHO [2] - Electro
-	ECHO [3] - Shekan
-	ECHO [4] - AdGuard
-	ECHO [5] - Google
-	ECHO [6] - Cloudflare
-	ECHO [7] - Radar.Game
-	ECHO [8] - OpenDNS
-	ECHO [9] - YandexDNS
-	ECHO [10] - CleanBrowsing
+	ECHO [0] - Default (DHCP)
+	ECHO [1] - Electro
+	ECHO [2] - Shekan
+	ECHO [3] - Radar.Game
+	ECHO [4] - 403.online
+	ECHO [5] - Begzar
+	ECHO [6] - Google
+	ECHO [7] - Cloudflare
+	ECHO [8] - AdGuard
+	ECHO [9] - OpenDNS
 	ECHO:
 	ECHO [C] Custom DNS
 	ECHO [M] Min Menu
-	SET /A dn=o >nul
-	SET /p dn=type :
-	IF %dn%==1 GOTO DefaultDNS
-	IF %dn%==2 GOTO Electro
-	IF %dn%==3 GOTO Shekan
-	IF %dn%==4 GOTO AdGuard
-	IF %dn%==5 GOTO Google
-	IF %dn%==6 GOTO Cloudflare
-	IF %dn%==7 GOTO Radar.Game
-	IF %dn%==8 GOTO OpenDNS
-	IF %dn%==9 GOTO YandexDNS
-	IF %dn%==10 GOTO CleanBrowsing
+	SET dn=o
+	SET /p dn=type:
+	IF %dn%==0 GOTO DHCP
+	IF %dn%==1 GOTO Electro
+	IF %dn%==2 GOTO Shekan
+	IF %dn%==3 GOTO Radar
+	IF %dn%==4 GOTO 403
+	IF %dn%==5 GOTO Begzar
+	IF %dn%==6 GOTO Google
+	IF %dn%==7 GOTO Cloudflare
+	IF %dn%==8 GOTO AdGuard
+	IF %dn%==9 GOTO OpenDNS
 	IF %dn%==C GOTO Custom_DNS
 	IF %dn%==M GOTO MinMenu
 	IF %dn%==c GOTO Custom_DNS
@@ -228,6 +233,7 @@ GOTO MinMenu
 	GOTO set_dns
 
 	:FL
+	CLS
 	COLOR 6
 	ECHO Loading....
 	ECHO Y88b   d88P 888b    888 
@@ -239,17 +245,16 @@ GOTO MinMenu
 	ECHO     888     888   Y8888 
 	ECHO     888     888    Y888
 	ipconfig /flushdns >nul
-	ipconfig /registerdns >nul
+	timeout 1 >nul
 	COLOR A
 	GOTO M
 
-	:DefaultDNS
+	:DHCP
 	CLS
 	TITLE "Default DNS"
 	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder () >nul
-	wmic nicconfig where (IPEnabled=TRUE) call EnableDHCP
+	wmic nicconfig where (IPEnabled=TRUE) call EnableDHCP > NUL 2>&1
 	GOTO FL
-
 	:Custom_DNS
 	CLS
 	COLOR D
@@ -279,13 +284,23 @@ GOTO MinMenu
 	GOTO FL
 	:Shekan
 	CLS
-	TITLE "Shekan"
+	TITLE "Shekan DNS"
 	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("178.22.122.100", "185.51.200.2") >nul
 	GOTO FL
-	:AdGuard
+	:Radar
 	CLS
-	TITLE "AdGuard DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("94.140.14.14", "94.140.15.15") >nul
+	TITLE "RadarGame DNS"
+	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("10.202.10.10", "10.202.10.11") >nul
+	GOTO FL
+	:403
+	CLS
+	TITLE "403 DNS"
+	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("10.202.10.202", "10.202.10.102") >nul
+	GOTO FL
+	:Begzar
+	CLS
+	TITLE "Begzar DNS"
+	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("185.55.226.26", "185.55.225.25") >nul
 	GOTO FL
 	:Google
 	CLS
@@ -297,25 +312,15 @@ GOTO MinMenu
 	TITLE "Cloudflare DNS"
 	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("1.1.1.1", "1.0.0.1") >nul
 	GOTO FL
-	:Radar.Game
+	:AdGuard
 	CLS
-	TITLE "Radar.Game"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("10.202.10.10", "10.202.10.11") >nul
+	TITLE "AdGuard DNS"
+	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("94.140.14.14", "94.140.15.15") >nul
 	GOTO FL
 	:OpenDNS
 	CLS
 	TITLE "OpenDNS"
 	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("208.67.222.222", "208.67.220.220") >nul
-	GOTO FL
-	:YandexDNS
-	CLS
-	TITLE "Yandex DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("77.88.8.8", "77.88.8.1") >nul
-	GOTO FL
-	:CleanBrowsing
-	CLS
-	TITLE "CleanBrowsing DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("185.228.168.168", "185.228.169.168") >nul
 	GOTO FL
 
 :M_service
@@ -405,6 +410,7 @@ GOTO MinMenu
 	sc config VSS start= disabled >nul
 	sc config Wecsvc start= disabled >nul
 ::	sc config Dhcp start= disabled >nul
+	sc config WFDSConMgrSvc start= disabled >nul
 	sc stop CDPSvc >nul
 	sc stop DPS >nul
 	sc stop netprofm >nul
@@ -418,7 +424,6 @@ GOTO MinMenu
 	sc stop wuauserv >nul
 	sc stop uhssvc >nul
 	sc stop PSEXESVC >nul
-	sc stop AppXSvc >nul
 	sc stop swprv >nul
 	sc stop Dhcp >nul
 	sc stop DsmSvc >nul
@@ -426,6 +431,7 @@ GOTO MinMenu
 	sc stop LicenseManager >nul
 	sc stop smphost >nul
 	sc stop Wecsvc >nul
+	sc stop WFDSConMgrSvc >nul
 	GOTO re
 :update_fix
 	cls
@@ -897,4 +903,6 @@ goto Logo
 	sc stop diagnosticshub.standardcollector.service >nul
 	sc stop BthAvctpSvc >nul
 	sc stop SmsRouter >nul
+	sc stop sppsvc >nul
+	sc stop AppXSvc >nul
 	goto Logo
