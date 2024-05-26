@@ -351,9 +351,18 @@ GOTO D1
 
 :stop_s2
 	cls
+	SET "SS=s"
 	TITLE "Stop Windows Services(LVL2)"
 	color 3
 	echo Stoping Service...
+	sc config Dhcp start= auto >nul
+	sc config WlanSvc start= demand >nul
+	sc config NlaSvc start= demand >nul
+	sc config netprofm start= demand >nul
+	sc config RmSvc start= demand >nul
+	sc start Dhcp >nul
+GOTO s
+:s
 	sc config CDPSvc start= disabled >nul
 	sc config DPS start= disabled >nul
 	sc config TokenBroker start= disabled >nul
@@ -363,11 +372,6 @@ GOTO D1
 	sc config RasMan start= disabled >nul
 	sc config wuauserv start= disabled >nul
 	sc config NcbService start= disabled >nul
-	sc config WlanSvc start= auto >nul
-	sc config Dhcp start= auto >nul
-	sc config NlaSvc start= demand >nul
-	sc config netprofm start= demand >nul
-	sc config RmSvc start= demand >nul
 	sc stop CDPSvc >nul
 	sc stop DPS >nul
 	sc stop TokenBroker >nul
@@ -378,10 +382,6 @@ GOTO D1
 	sc stop RasMan >nul
 	sc stop wuauserv >nul
 	sc stop uhssvc >nul
-::	sc start WlanSvc >nul
-::	sc start NlaSvc >nul
-::	sc start netprofm >nul
-::	sc start Dhcp >nul
 	sc stop swprv >nul
 	goto re
 :stop_s3
@@ -389,17 +389,8 @@ GOTO D1
 	TITLE "Stop Windows Services(LVL3)"
 	color 3
 	echo Stoping Service...
-	sc config CDPSvc start= disabled >nul
-	sc config DPS start= disabled >nul
 	sc config netprofm start= disabled >nul
 	sc config NlaSvc start= disabled >nul
-	sc config TokenBroker start= disabled >nul
-	sc config WpnService start= disabled >nul
-	sc config InstallService start= disabled >nul
-	sc config UsoSvc start= disabled >nul
-	sc config NcbService start= disabled >nul
-	sc config RasMan start= disabled >nul
-	sc config wuauserv start= disabled >nul
 	sc config PSEXESVC start= disabled >nul
 	sc config swprv start= disabled >nul
 	sc config RmSvc start= disabled >nul
@@ -409,22 +400,14 @@ GOTO D1
 	sc config LicenseManager start= disabled >nul
 	sc config VSS start= disabled >nul
 	sc config Wecsvc start= disabled >nul
-::	sc config Dhcp start= disabled >nul
+	sc config Dhcp start= disabled >nul
 	sc config WFDSConMgrSvc start= disabled >nul
-	sc stop CDPSvc >nul
-	sc stop DPS >nul
+	sc config WlanSvc start= disabled
+
 	sc stop netprofm >nul
 	sc stop NlaSvc >nul
-	sc stop TokenBroker >nul
-	sc stop WpnService >nul
-	sc stop InstallService >nul
-	sc stop UsoSvc >nul
-	sc stop NcbService >nul
-	sc stop RasMan >nul
-	sc stop wuauserv >nul
 	sc stop uhssvc >nul
 	sc stop PSEXESVC >nul
-	sc stop swprv >nul
 	sc stop Dhcp >nul
 	sc stop DsmSvc >nul
 	sc stop SENS >nul
@@ -432,7 +415,9 @@ GOTO D1
 	sc stop smphost >nul
 	sc stop Wecsvc >nul
 	sc stop WFDSConMgrSvc >nul
-	GOTO re
+	sc stop WlanSvc >nul
+	sc stop RmSvc >nul
+	GOTO s
 :update_fix
 	cls
 	TITLE "Fix Windows Update"
