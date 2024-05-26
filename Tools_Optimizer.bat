@@ -170,18 +170,18 @@ GOTO MinMenu
 	SET "dns1=%sdns:,=" & SET "dns2=%"
 	SET "name=DNS"
 
-	IF %dns1%==8.8.8.8 (set name=Google)
-	IF %dns1%==78.157.42.100 (set name=Electro)
-	IF %dns1%==78.157.42.101 (set name=Electro)
-	IF %dns1%==185.51.200.2 (set name=Shekan)
-	IF %dns1%==178.22.122.100 (set name=Shekan)
-	IF %dns1%==94.140.14.14 (set name=AdGuard)
-	IF %dns1%==1.1.1.1 (set name=Cloudflare)
-	IF %dns1%==10.202.10.10 (set name=Radar.Game)
-	IF %dns1%==208.67.220.220 (set name=OpenDNS)
-	IF %dns1%==208.67.222.222 (set name=OpenDNS)
-	IF %dns1%==77.88.8.8 (set name=YandexDNS)
-	IF %dns1%==185.228.168.168 (set name=CleanBrowsing)
+	IF "%dns1%"=="8.8.8.8" (set name=Google)
+	IF "%dns1%"=="78.157.42.100" (set name=Electro)
+	IF "%dns1%"=="78.157.42.101" (set name=Electro)
+	IF "%dns1%"=="185.51.200.2" (set name=Shekan)
+	IF "%dns1%"=="178.22.122.100" (set name=Shekan)
+	IF "%dns1%"=="94.140.14.14" (set name=AdGuard)
+	IF "%dns1%"=="1.1.1.1" (set name=Cloudflare)
+	IF "%dns1%"=="10.202.10.10" (set name=Radar.Game)
+	IF "%dns1%"=="208.67.220.220" (set name=OpenDNS)
+	IF "%dns1%"=="10.202.10.202" (set name=403.online)
+	IF "%dns1%"=="185.55.226.26" (set name=Begzar)
+	IF "%dns1%"=="10.202.10.11" (set name=Radar.Game)
 
 	ping %dns1% -n 1 -w 500|findstr /r "^R" > %temp%\ping.txt
 	SET "ping="
