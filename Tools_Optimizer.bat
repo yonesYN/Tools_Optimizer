@@ -7,7 +7,7 @@ set "params=%*"
 cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "cmd.exe", "/k cd ""%~sdp0"" && ""%~s0"" %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
 GOTO MinMenu
 :MinMenu
-	TITLE %~n0 1.4
+	TITLE %~n0 1.5
 	COLOR B
 	mode con: cols=83 lines=17
 	CLS
@@ -103,6 +103,7 @@ GOTO MinMenu
 	reg add "HKLM\SYSTEM\CurrentControlSet\services\LanmanServer\Parameters" /v "IRPStackSize" /t REG_DWORD /d "30" /f
 	reg add "HKLM\SYSTEM\CurrentControlSet\services\LanmanServer\Parameters" /v "SharingViolationDelay" /t REG_DWORD /d "0" /f
 	reg add "HKLM\SYSTEM\CurrentControlSet\services\LanmanServer\Parameters" /v "SharingViolationRetries" /t REG_DWORD /d "0" /f
+	reg add "HKLM\System\CurrentControlSet\Services\LanmanServer\Parameters" /v "AutoShareWks" /t REG_DWORD /d "0" /f
 	Reg.exe add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "Tcp1323Opts" /t REG_DWORD /d "1" /f
 	Reg.exe add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "TcpMaxDupAcks" /t REG_DWORD /d "2" /f
 	netsh winsock set autotuning on
@@ -174,24 +175,22 @@ GOTO D1)
 	IF "%dns1%"=="94.140.14.14" (set name=AdGuard)
 	IF "%dns1%"=="1.1.1.1" (set name=Cloudflare)
 	IF "%dns1%"=="10.202.10.10" (set name=Radar.Game)
-	IF "%dns1%"=="208.67.220.220" (set name=OpenDNS)
+	IF "%dns1%"=="10.202.10.11" (set name=Radar.Game)
 	IF "%dns1%"=="10.202.10.202" (set name=403.online)
 	IF "%dns1%"=="185.55.226.26" (set name=Begzar)
-	IF "%dns1%"=="10.202.10.11" (set name=Radar.Game)
+	IF "%dns1%"=="208.67.220.220" (set name=OpenDNS)
+	IF "%dns1%"=="208.67.222.222" (set name=OpenDNS)
 
-	ping %dns1% -n 1 -w 500|findstr /r "^R" > %temp%\ping.txt
-	SET "ping="
+	ping %dns1% -n 1 -w 500|findstr Minimum > %temp%\ping.txt
 	SET /p ping=<%temp%\ping.txt
-	SET "pi=%ping: =" & rem "%"
-	SET "ping=%ping:*time=%"
-	SET "ping=%ping: =" & rem "%"
-::	SET "pi=%ping:~1%"
-::	SET "pg=%pi:ms=%"
-::	SETLOCAL ENABLEDELAYEDEXPANSION
-::	SET "pi=!pi:%pg%=!"
+	SET "ping=%ping:,=" & rem "%"
+	SET "ping=%ping:Minimum=ping%"
+	SET "p=%ping:g=" & rem "%"
+	SET "p=%p: =%"
 
-	IF "%pi%" equ "Request" (ECHO [96m%name%: %sdns:,= - %		ping=[31mTimeout[96m)
-	IF "%pi%" equ "Reply" (ECHO %name%: %sdns:,= - %		ping%ping%)
+	IF "%p%" == "pin" (ECHO %name%: %sdns:,= - %	%ping%
+GOTO D1)
+	ECHO [96m%name%: %sdns:,= - %		ping=[31mTimeout[96m
 GOTO D1
 :D1
 	IF "%sdns%"=="None" (ECHO [96mDNS: [31mNone[96m)
@@ -352,7 +351,7 @@ GOTO D1
 	echo Stoping Service...
 	sc config Dhcp start=auto >nul
 	sc config WlanSvc start=demand >nul
-	sc config NlaSvc start=demand >nul
+	sc config NlaSvc start=auto >nul
 	sc config netprofm start=demand >nul
 	sc config RmSvc start=demand >nul
 	sc start Dhcp >nul
@@ -367,6 +366,7 @@ GOTO s
 	sc config RasMan start=disabled >nul
 	sc config wuauserv start=disabled >nul
 	sc config NcbService start=disabled >nul
+	sc config NDU start=disabled >nul
 	sc stop CDPSvc >nul
 	sc stop DPS >nul
 	sc stop TokenBroker >nul
@@ -378,6 +378,7 @@ GOTO s
 	sc stop wuauserv >nul
 	sc stop uhssvc >nul
 	sc stop swprv >nul
+	sc stop NDU >nul
 	goto re
 :stop_s3
 	cls
@@ -401,6 +402,9 @@ GOTO s
 	sc config lmhosts start=disabled >nul
 	sc config FrameServer start=disabled >nul
 	sc config Netlogon start=disabled >nul
+	sc config LanmanWorkstation start=disabled >nul
+	sc config LanmanServer start=disabled >nul
+	sc config Themes start=disabled >nul
 	sc stop netprofm >nul
 	sc stop NlaSvc >nul
 	sc stop uhssvc >nul
@@ -423,13 +427,13 @@ GOTO s
 	TITLE "Fix Windows Update"
 	dism.exe /Online /Cleanup-image /Restorehealth
 	sfc /SCANNOW
+	gpupdate /force
 	net stop wuauserv
 	net stop cryptSvc
 	net stop bits
 	net stop msiserver
 	net stop appidsvc
 	net stop UsoSvc
-	gpupdate /force
 	del /s /q "%ALLUSERSPROFILE%\Application Data\Microsoft\Network\Downloader\*.*"
 	rmdir %systemroot%\SoftwareDistribution /S /Q
 	rmdir %systemroot%\system32\catroot2 /S /Q
@@ -520,7 +524,7 @@ sc config GraphicsPerfSvc start=demand
 sc config hidserv start=demand
 sc config HvHost start=demand
 sc config icssvc start=disabled
-sc config IKEEXT start=auto
+sc config IKEEXT start=demand
 sc config InstallService start=demand
 sc config iphlpsvc start=auto
 sc config IpxlatCfgSvc start=demand
@@ -552,7 +556,7 @@ sc config NetSetupSvc start=demand
 sc config NetTcpPortSharing start=disabled
 sc config NgcCtnrSvc start=demand
 sc config NgcSvc start=demand
-sc config NlaSvc start=demand
+sc config NlaSvc start=auto
 sc config nsi start=auto
 sc config NVDisplay.ContainerLocalSystem start=auto
 sc config p2pimsvc start=disabled
