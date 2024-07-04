@@ -1,4 +1,5 @@
 @ECHO off
+SETLOCAL ENABLEDELAYEDEXPANSION
 net session >nul 2>&1
 IF %errorLevel% == 0 (
 	GOTO MinMenu
@@ -7,7 +8,7 @@ set "params=%*"
 cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "cmd.exe", "/k cd ""%~sdp0"" && ""%~s0"" %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
 GOTO MinMenu
 :MinMenu
-	TITLE %~n0 1.5
+	TITLE %~n0 1.6
 	COLOR B
 	mode con: cols=83 lines=17
 	CLS
@@ -147,14 +148,15 @@ GOTO MinMenu
 	:M
 	CLS
 	mode con: cols=83 lines=17
-	wmic nicconfig where (IPEnabled=TRUE) get index |findstr /r "[0-9]" > %temp%\index_interface.txt
-	SET /p Index_ie=<%temp%\index_interface.txt
-	SET "Index_ie=%Index_ie: =%"
-	wmic nic where "Index=%Index_ie%" get NetConnectionID|findstr /v "NetConnectionID" > %temp%\name_interface.txt
-	SET /p Index_ie=<%temp%\name_interface.txt
-	powershell -command "Get-DnsClientServerAddress"|findstr /B "%Index_ie%" | findstr IPv4 > %temp%\dns.txt
+	SET ct=1
+	FOR /F "tokens=* USEBACKQ" %%F IN (`wmic nicconfig where "IPEnabled=TRUE" get index ^|findstr /r "[0-9]"`) DO (SET index!ct!=%%F
+	SET /a ct=!ct!+1)
+	FOR /F "tokens=* USEBACKQ" %%F IN (`wmic nic where "Index=%index1: =%" get NetConnectionID ^|findstr /v NetConnectionID ^|findstr /r [a-z]`) DO (SET index1=%%F)
+	IF %ct% == 3 (
+	FOR /F "tokens=* USEBACKQ" %%F IN (`wmic nic where "Index=%index2: =%" get NetConnectionID ^|findstr /v NetConnectionID ^|findstr /r [a-z]`) DO (
+	SET index2=%%F))
+	FOR /F "tokens=* USEBACKQ" %%F IN (`powershell "Get-DnsClientServerAddress" ^|findstr /B "%index1%" ^|findstr IPv4`)DO (SET sdns=%%F)
 
-	SET /p sdns=<%temp%\dns.txt
 	SET "sdns=%sdns:*{=%"
 	SET "sdns=%sdns: =%"
 	SET "sdns=%sdns:	=%"
@@ -181,20 +183,15 @@ GOTO D1)
 	IF "%dns1%"=="208.67.220.220" (set name=OpenDNS)
 	IF "%dns1%"=="208.67.222.222" (set name=OpenDNS)
 
-	ping %dns1% -n 1 -w 500|findstr Minimum > %temp%\ping.txt
-	SET /p ping=<%temp%\ping.txt
-	SET "ping=%ping:,=" & rem "%"
-	SET "ping=%ping:Minimum=ping%"
-	SET "p=%ping:g=" & rem "%"
-	SET "p=%p: =%"
-
-	IF "%p%" == "pin" (ECHO %name%: %sdns:,= - %	%ping%
+FOR /F "tokens=* USEBACKQ" %%F IN (`ping %dns1% -n 1 -w 500`) DO (SET ping=%%F)
+	SET "ping=%ping:,="& rem %
+	IF "%ping:~,1%" == "M" (ECHO %name%: %sdns:,= - %	%ping:Minimum=ping%
 GOTO D1)
 	ECHO [96m%name%: %sdns:,= - %		ping=[31mTimeout[96m
 GOTO D1
 :D1
 	IF "%sdns%"=="None" (ECHO [96mDNS: [31mNone[96m)
-	ECHO Interface: %Index_ie%
+	ECHO Interface: %index1: =%, %index2%
 	ECHO:
 	ECHO [0] - Default (DHCP)
 	ECHO [1] - Electro
@@ -450,7 +447,6 @@ GOTO s
 	cls
 	TITLE "WinSxS Cleanup"
 	Dism.exe /Online /Cleanup-Image /AnalyzeComponentStore
-::	schtasks.exe /Run /TN "\Microsoft\Windows\Servicing\StartComponentCleanup"
 	Dism.exe /online /Cleanup-Image /StartComponentCleanup
 	Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase
 	Dism.exe /online /Cleanup-Image /SPSuperseded
@@ -775,8 +771,6 @@ goto Logo
 	sc config XboxNetApiSvc start=disabled >nul
 	sc config cloudidsvc start=disabled >nul
 	sc config WpcMonSvc start=disabled >nul
-::	sc config "AMD Crash Defender Service" start=disabled >nul
-::	sc config "AMD External Events Utility" start=disabled >nul
 	sc config "NvTelemetryContainer" start=disabled >nul
 	sc config WiaRpc start=disabled >nul
 	sc config QWAVE start=disabled >nul
