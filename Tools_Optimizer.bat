@@ -60,7 +60,7 @@ GOTO Main
 	netsh interface 6to4 set state disabled
 	netsh int tcp set global timestamps=disabled
 	netsh int tcp set heuristics disabled
-	netsh int tcp set global chimney=disabled
+	netsh int tcp set global chimney=disabled >nul
 	netsh int tcp set global ecncapability=disabled
 	netsh int tcp set global nonsackrttresiliency=disabled
 	netsh int ip set global icmpredirects=disabled
@@ -73,7 +73,6 @@ GOTO Main
 	netsh int tcp set global dca=enabled
 	netsh int tcp set global netdma=enabled
 	netsh interface tcp set heuristics disabled
-	Netsh int set global congestionprovider=ctcp
 	netsh int tcp set global rsc=enabled
 	netsh int tcp set global rss=enabled
 	ipconfig /flushdns
@@ -177,7 +176,7 @@ GOTO D)
 	IF "%dns1%"=="208.67.220.220" (set name=OpenDNS)
 	IF "%dns1%"=="208.67.222.222" (set name=OpenDNS)
 
-FOR /F "tokens=* USEBACKQ" %%F IN (`ping %dns1% -n 1 -w 600`) DO (SET ping=%%F)
+FOR /F "tokens=* USEBACKQ" %%F IN (`ping %dns1% -n 1 -w 800`) DO (SET ping=%%F)
 	SET "ping=%ping:,="& rem %
 	mode con: cols=83 lines=17
 	CLS
@@ -247,7 +246,7 @@ ENDLOCAL
 	ECHO [M] MainMenu
 	SET  DNSa=o
 	SET  DNSb=o
-	
+
 	SET /p DNSa=DNS1:
 		IF %DNSa%==m GOTO set_dns
 		IF %DNSa%==M GOTO set_dns
@@ -397,8 +396,8 @@ GOTO s
 	sc stop PSEXESVC >nul
 	sc stop Dhcp >nul
 	sc stop DsmSvc >nul
-	sc stop SENS >nul
-	sc stop LicenseManager >nul
+::	sc stop SENS >nul
+::	sc stop LicenseManager >nul
 	sc stop smphost >nul
 	sc stop Wecsvc >nul
 	sc stop WFDSConMgrSvc >nul
