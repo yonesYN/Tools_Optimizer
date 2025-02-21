@@ -157,7 +157,7 @@ GOTO Main
 	SET "sdns=%sdns:	=%"
 IF "%sdns%"=="}" (SET "sdns=None"
 GOTO D)
-	SET "sdns=%sdns:b=%"
+	SET "sdns=%sdns:}=%"
 	SET "dns1=%sdns:,=" & SET "dns2=%"
 	SET "name=DNS"
 
