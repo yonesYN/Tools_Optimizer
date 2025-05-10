@@ -3,7 +3,7 @@ set "params=%*"
 cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "cmd.exe", "/k cd ""%~sdp0"" && ""%~s0"" %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
 GOTO Main
 :Main
-	TITLE %~n0 1.7
+	TITLE %~n0 1.7.2
 	COLOR B
 	mode con: cols=83 lines=17
 	CLS
@@ -60,6 +60,7 @@ GOTO Main
 	netsh interface 6to4 set state disabled
 	netsh int tcp set global timestamps=disabled
 	netsh int tcp set heuristics disabled
+	netsh int tcp set heuristics wsh=disabled
 	netsh int tcp set global chimney=disabled >nul
 	netsh int tcp set global ecncapability=disabled
 	netsh int tcp set global nonsackrttresiliency=disabled
@@ -67,14 +68,16 @@ GOTO Main
 	netsh int tcp set security mpp=disabled profiles=disabled
 	netsh int ip set global multicastforwarding=disabled
 	netsh int tcp set supplemental internet congestionprovider=ctcp
+	netsh int tcp set global maxsynretransmissions=2
 	netsh interface teredo set state disabled
 	netsh int isatap set state disabled
 	netsh int ip set global taskoffload=disabled
 	netsh int tcp set global dca=enabled
 	netsh int tcp set global netdma=enabled
-	netsh interface tcp set heuristics disabled
 	netsh int tcp set global rsc=enabled
 	netsh int tcp set global rss=enabled
+	netsh int ip set global mediasenseeventlog=disabled
+	netsh int ip set global mldlevel=none
 	ipconfig /flushdns
 	ipconfig /registerdns
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "DefaultTTL" /t REG_DWORD /d "64" /f
@@ -175,7 +178,7 @@ GOTO D)
 	IF "%dns1%"=="208.67.220.220" (set name=OpenDNS)
 	IF "%dns1%"=="208.67.222.222" (set name=OpenDNS)
 
-FOR /F "tokens=* USEBACKQ" %%F IN (`ping %dns1% -n 1 -w 800`) DO (SET ping=%%F)
+FOR /F "tokens=* USEBACKQ" %%F IN (`ping %dns1% -n 1 -w 900`) DO (SET ping=%%F)
 	SET "ping=%ping:,="& rem %
 	mode con: cols=83 lines=17
 	CLS
@@ -395,8 +398,6 @@ GOTO s
 	sc stop PSEXESVC >nul
 	sc stop Dhcp >nul
 	sc stop DsmSvc >nul
-::	sc stop SENS >nul
-::	sc stop LicenseManager >nul
 	sc stop smphost >nul
 	sc stop Wecsvc >nul
 	sc stop WFDSConMgrSvc >nul
