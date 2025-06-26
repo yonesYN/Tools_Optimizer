@@ -77,9 +77,7 @@ GOTO Main
 	netsh int tcp set global rsc=enabled
 	netsh int tcp set global rss=enabled
 	netsh int ip set global mediasenseeventlog=disabled
-	netsh int ip set global mldlevel=none
-	ipconfig /flushdns
-	ipconfig /registerdns
+::	netsh int ip set global mldlevel=none
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "DefaultTTL" /t REG_DWORD /d "64" /f
 	reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v "NetworkThrottlingIndex" /t REG_DWORD /d "4294967295" /f
 	reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v "SystemResponsiveness" /t REG_DWORD /d "0" /f
@@ -113,11 +111,9 @@ GOTO Main
 	powershell -command "ForEach($adapter In Get-NetAdapter){Disable-NetAdapterLso -Name $adapter.Name -ErrorAction SilentlyContinue}"
 	CLS
 	ECHO Deleting Cache Files
-	RMDIR "%systemroot%\SoftwareDistribution\" /S /Q >nul
 	RMDIR "%systemroot%\Prefetch\" /S /Q >nul
 	RMDIR "%systemroot%\Temp\" /S /Q >nul
 	RMDIR "%temp%\" /S /Q >nul
-	RMDIR "%LOCALAPPDATA%\Package Cache\" /S /Q >nul
 	RMDIR "%LOCALAPPDATA%\D3DSCache\" /S /Q >nul
 	RMDIR "%LOCALAPPDATA%\CrashDumps\" /S /Q >nul
 	GOTO Logo
@@ -353,6 +349,7 @@ GOTO s
 	sc config RasMan start=disabled >nul
 	sc config wuauserv start=disabled >nul
 	sc config NcbService start=disabled >nul
+	sc config uhssvc start=disabled >nul
 	sc config NDU start=disabled >nul
 	sc stop CDPSvc >nul
 	sc stop DPS >nul
@@ -372,6 +369,7 @@ GOTO s
 	TITLE "Stop Windows Services(LVL3)"
 	color 3
 	echo Stoping Service...
+	reg add "HKLM\SYSTEM\CurrentControlSet\Services\WinHttpAutoProxySvc" /v "Start" /t REG_DWORD /d "4" /f >nul
 	sc config netprofm start=disabled >nul
 	sc config NlaSvc start=disabled >nul
 	sc config PSEXESVC start=disabled >nul
@@ -394,10 +392,11 @@ GOTO s
 	sc config Themes start=disabled >nul
 	sc stop netprofm >nul
 	sc stop NlaSvc >nul
-	sc stop uhssvc >nul
 	sc stop PSEXESVC >nul
 	sc stop Dhcp >nul
 	sc stop DsmSvc >nul
+	sc stop SENS >nul
+	sc stop LicenseManager >nul
 	sc stop smphost >nul
 	sc stop Wecsvc >nul
 	sc stop WFDSConMgrSvc >nul
@@ -455,13 +454,13 @@ sc config autotimesvc start=demand
 sc config AxInstSV start=disabled
 sc config BDESVC start=demand
 sc config BFE start=auto
-sc config BITS start=auto
+sc config BITS start=delayed-auto
 sc config BrokerInfrastructure start=auto
 sc config BTAGService start=demand
 sc config BthAvctpSvc start=demand
 sc config bthserv start=demand
 sc config camsvc start=demand
-sc config CDPSvc start=demand
+sc config CDPSvc start=delayed-auto
 sc config CertPropSvc start=disabled
 sc config ClipSVC start=demand
 sc config cloudidsvc start=demand
@@ -510,9 +509,9 @@ sc config HvHost start=demand
 sc config icssvc start=disabled
 sc config IKEEXT start=demand
 sc config InstallService start=demand
-sc config iphlpsvc start=auto
+sc config iphlpsvc start=disabled
 sc config IpxlatCfgSvc start=demand
-sc config KeyIso start=auto
+sc config KeyIso start=demand
 sc config KtmRm start=demand
 sc config LanmanServer start=auto
 sc config LanmanWorkstation start=auto
@@ -528,12 +527,12 @@ sc config mpssvc start=auto
 sc config MSDTC start=demand
 sc config MSiSCSI start=demand
 sc config msiserver start=demand
-sc config MsKeyboardFilter start=demand
+sc config MsKeyboardFilter start=disabled
 sc config NaturalAuthentication start=demand
 sc config NcaSvc start=demand
 sc config NcbService start=demand
 sc config NcdAutoSetup start=demand
-sc config Netlogon start=auto
+sc config Netlogon start=demand
 sc config Netman start=demand
 sc config netprofm start=demand
 sc config NetSetupSvc start=demand
@@ -569,7 +568,6 @@ sc config RmSvc start=demand
 sc config RpcEptMapper start=auto
 sc config RpcLocator start=demand
 sc config RpcSs start=auto
-sc config RstMwService start=demand
 sc config SamSs start=auto
 sc config SCardSvr start=disabled
 sc config ScDeviceEnum start=demand
@@ -609,17 +607,17 @@ sc config Themes start=auto
 sc config TieringEngineService start=demand
 sc config TimeBrokerSvc start=demand
 sc config TokenBroker start=demand
-sc config TrkWks start=auto
+sc config TrkWks start=disabled
 sc config TroubleshootingSvc start=demand
 sc config TrustedInstaller start=demand
-sc config tzautoupdate start=demand
+sc config tzautoupdate start=disabled
 sc config UevAgentService start=disabled
 sc config UmRdpService start=demand
 sc config upnphost start=demand
 sc config UserManager start=auto
 sc config UsoSvc start=demand
 sc config VacSvc start=demand
-sc config VaultSvc start=auto
+sc config VaultSvc start=demand
 sc config vds start=demand
 sc config vmicguestinterface start=demand
 sc config vmicheartbeat start=demand
@@ -640,7 +638,7 @@ sc config Wcmsvc start=auto
 sc config wcncsvc start=demand
 sc config WdiServiceHost start=demand
 sc config WdiSystemHost start=demand
-sc config WebClient start=demand
+sc config WebClient start=disabled
 sc config Wecsvc start=demand
 sc config WEPHOSTSVC start=demand
 sc config wercplsupport start=demand
@@ -648,16 +646,18 @@ sc config WerSvc start=disabled
 sc config WFDSConMgrSvc start=demand
 sc config WiaRpc start=demand
 sc config WinHttpAutoProxySvc start=demand
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\WinHttpAutoProxySvc" /v "Start" /t REG_DWORD /d "3" /f
 sc config Winmgmt start=auto
 sc config WinRM start=disabled
 sc config wisvc start=disabled
-sc config WlanSvc start=auto
+sc config WlanSvc start=demand
 sc config wlidsvc start=demand
 sc config wlpasvc start=demand
 sc config WManSvc start=demand
 sc config wmiApSrv start=demand
 sc config WpcMonSvc start=disabled
-sc config WpnService start=demand
+sc config WpnService start=auto
+sc config wscsvc start=delayed-auto
 sc config WSearch start=disabled
 sc config wuauserv start=demand
 sc config WwanSvc start=demand
@@ -667,7 +667,7 @@ sc config XboxGipSvc start=demand
 sc config XboxNetApiSvc start=demand
 sc config AarSvc start=demand
 sc config BcastDVRUserService start=demand
-sc config BluetoothUserService start=disabled
+sc config BluetoothUserService start=demand
 sc config CaptureService start=demand
 sc config cbdhsvc start=demand
 sc config CDPUserSvc start=auto
