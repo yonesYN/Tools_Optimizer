@@ -3,7 +3,7 @@ set "params=%*"
 cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "cmd.exe", "/k cd ""%~sdp0"" && ""%~s0"" %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
 GOTO Main
 :Main
-	TITLE %~n0 1.8
+	TITLE %~n0 1.9
 	COLOR B
 	mode con: cols=83 lines=17
 	CLS
@@ -110,7 +110,7 @@ GOTO Main
 	powershell -command "ForEach($adapter In Get-NetAdapter){Disable-NetAdapterPowerManagement -Name $adapter.Name -ErrorAction SilentlyContinue}"
 	powershell -command "ForEach($adapter In Get-NetAdapter){Disable-NetAdapterLso -Name $adapter.Name -ErrorAction SilentlyContinue}"
 	CLS
-	ECHO Deleting Cache Files
+	ECHO Deleting TMP Files
 	RMDIR "%systemroot%\Prefetch\" /S /Q >nul
 	RMDIR "%systemroot%\Temp\" /S /Q >nul
 	RMDIR "%temp%\" /S /Q >nul
@@ -138,61 +138,34 @@ GOTO Main
 	CLS
 	GOTO M
 :M
-	SET ct=1
-	SETLOCAL ENABLEDELAYEDEXPANSION
-	FOR /F "tokens=* USEBACKQ" %%F IN (`wmic nicconfig where "IPEnabled=TRUE" get index ^|findstr /r "[0-9]"`) DO (SET index!ct!=%%F
-	SET /a ct=!ct!+1)
-	FOR /F "tokens=* USEBACKQ" %%F IN (`wmic nic where "Index=%index1: =%" get NetConnectionID ^|findstr /v NetConnectionID ^|findstr /r [a-z]`) DO (
-	SET index1=%%F)
-	IF %ct% == 3 (
-	FOR /F "tokens=* USEBACKQ" %%F IN (`wmic nic where "Index=%index2: =%" get NetConnectionID ^|findstr /v NetConnectionID ^|findstr /r [a-z]`) DO (
-	SET index2=%%F))
-	FOR /F "tokens=* USEBACKQ" %%F IN (`powershell "Get-DnsClientServerAddress" ^|findstr /B "%index1%" ^|findstr IPv4`)DO (
-	SET sdns=%%F
-	GOTO E)
+for /f "delims=" %%F in ('powershell -NoProfile -Command "$ap=(Get-NetAdapter | Where Status -eq 'Up' | Sort-Object InterfaceIndex)[0]; $DNS=(Get-DnsClientServerAddress -InterfaceIndex $ap.ifIndex | Where AddressFamily -eq 2).ServerAddresses -join ' - '; Write-Output ($ap.Name + '= ' + $DNS + 'N')"') do (
+    set "full=%%F"
+)
 :E
-	SET "sdns=%sdns:*{=%"
-	SET "sdns=%sdns: =%"
-	SET "sdns=%sdns:	=%"
-IF "%sdns%"=="}" (SET "sdns=None"
+	SET "sdns=%full:* =%"
+	IF "%sdns%"=="N" (SET "sdns=None"
 GOTO D)
-	SET "sdns=%sdns:}=%"
-	SET "dns1=%sdns:,=" & SET "dns2=%"
-	SET "name=DNS"
+	SET "sdns=%sdns:N=%"
+	SET "dns1=%sdns:-=" & SET "dns2=%"
 
-	IF "%dns1%"=="8.8.8.8" (set name=Google)
-	IF "%dns1%"=="78.157.42.100" (set name=Electro)
-	IF "%dns1%"=="78.157.42.101" (set name=Electro)
-	IF "%dns1%"=="185.51.200.2" (set name=Shekan)
-	IF "%dns1%"=="178.22.122.100" (set name=Shekan)
-	IF "%dns1%"=="94.140.14.14" (set name=AdGuard)
-	IF "%dns1%"=="1.1.1.1" (set name=Cloudflare)
-	IF "%dns1%"=="10.202.10.10" (set name=Radar.Game)
-	IF "%dns1%"=="10.202.10.11" (set name=Radar.Game)
-	IF "%dns1%"=="10.202.10.202" (set name=403.online)
-	IF "%dns1%"=="185.55.226.26" (set name=Begzar)
-	IF "%dns1%"=="208.67.220.220" (set name=OpenDNS)
-	IF "%dns1%"=="208.67.222.222" (set name=OpenDNS)
-
-FOR /F "tokens=* USEBACKQ" %%F IN (`ping %dns1% -n 1 -w 900`) DO (SET ping=%%F)
+FOR /F "tokens=* USEBACKQ" %%F IN (`ping %dns1% -n 1 -w 1000`) DO (SET ping=%%F)
 	SET "ping=%ping:,="& rem %
 	mode con: cols=83 lines=17
 	CLS
-	IF "%ping:~,1%" == "M" (ECHO %name%: %sdns:,= - %		%ping:Minimum =Ping%
+	IF "%ping:~,1%" == "M" (ECHO %full:N=%		%ping:Minimum =Ping%
 GOTO D)
-	ECHO [96m%name%: %sdns:,= - %		Ping=[31mTimeout[96m
+	ECHO [96mDNS: %sdns:,= - %		Ping=[31mTimeout[96m
 GOTO D
 :D
 	IF "%sdns%"=="None" (ECHO [96mDNS: [31mNone[96m)
-	ECHO Interface: %index1: =%, %index2%
-ENDLOCAL
+
 	ECHO:
 	ECHO [0] - Default (DHCP)
 	ECHO [1] - Electro
 	ECHO [2] - Shekan
 	ECHO [3] - Radar.Game
-	ECHO [4] - 403.online
-	ECHO [5] - Begzar
+	ECHO [4] - Quad9
+	ECHO [5] - Level3
 	ECHO [6] - Google
 	ECHO [7] - Cloudflare
 	ECHO [8] - AdGuard
@@ -200,27 +173,34 @@ ENDLOCAL
 	ECHO:
 	ECHO [C] Custom DNS
 	ECHO [M] Main Menu
-	SET dn=o
-	SET /p dn=type:
-	IF %dn%==0 GOTO DHCP
-	IF %dn%==1 GOTO Electro
-	IF %dn%==2 GOTO Shekan
-	IF %dn%==3 GOTO Radar
-	IF %dn%==4 GOTO 403
-	IF %dn%==5 GOTO Begzar
-	IF %dn%==6 GOTO Google
-	IF %dn%==7 GOTO Cloudflare
-	IF %dn%==8 GOTO AdGuard
-	IF %dn%==9 GOTO OpenDNS
-	IF %dn%==C GOTO Custom_DNS
-	IF %dn%==M GOTO Main
-	IF %dn%==c GOTO Custom_DNS
-	IF %dn%==m GOTO Main
+	SET d=o
+	SET /p d=type:
+	IF %d%==0 GOTO DHCP
+	IF %d%==1 (SET nd='78.157.42.100','78.157.42.101'
+	GOTO rdns)
+	IF %d%==2 (SET nd='178.22.122.100','185.51.200.2'
+	GOTO rdns)
+	IF %d%==3 (SET nd='10.202.10.10','10.202.10.11'
+	GOTO rdns)
+	IF %d%==4 (SET nd='9.9.9.9','149.112.112.112'
+	GOTO rdns)
+	IF %d%==5 (SET nd='209.244.0.3','209.244.0.4'
+	GOTO rdns)
+	IF %d%==6 (SET nd='8.8.8.8','8.8.4.4'
+	GOTO rdns)
+	IF %d%==7 (SET nd='1.1.1.1','1.0.0.1'
+	GOTO rdns)
+	IF %d%==8 (SET nd='94.140.14.14','94.140.15.15'
+	GOTO rdns)
+	IF %d%==9 (SET nd='208.67.222.222','208.67.220.220'
+	GOTO rdns)
+	IF %d%==C GOTO Custom_DNS
+	IF %d%==M GOTO Main
+	IF %d%==c GOTO Custom_DNS
+	IF %d%==m GOTO Main
 	GOTO set_dns
 :FL
-	CLS
 	COLOR 6
-	ECHO Loading....
 	ECHO Y88b   d88P 888b    888
 	ECHO  Y88b d88P  8888b   888
 	ECHO   Y88o88P   88888b  888
@@ -233,17 +213,16 @@ ENDLOCAL
 	GOTO M
 :DHCP
 	CLS
-	TITLE "Default DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder () >nul
-	wmic nicconfig where (IPEnabled=TRUE) call EnableDHCP >nul
+	ECHO Loading...
+	powershell "Get-NetAdapter | Where Status -eq 'Up' | ForEach-Object { Set-NetIPInterface -InterfaceIndex $_.ifIndex -Dhcp Enabled; Set-DnsClientServerAddress -InterfaceIndex $_.ifIndex -ResetServerAddresses}" >nul
 	GOTO FL
 :Custom_DNS
 	CLS
 	COLOR D
 	TITLE "Custom DNS"
 	ECHO [M] MainMenu
-	SET  DNSa=o
-	SET  DNSb=o
+	SET DNSa=o
+	SET DNSb=o
 
 	SET /p DNSa=DNS1:
 		IF %DNSa%==m GOTO set_dns
@@ -253,55 +232,15 @@ ENDLOCAL
 		IF %DNSb%==m GOTO set_dns
 		IF %DNSb%==M GOTO set_dns
 		IF %DNSb%==o GOTO FL2
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("%DNSa%", "%DNSb%") >nul
+	powershell "Set-DnsClientServerAddress -InterfaceIndex (Get-NetAdapter | Where Status -eq 'Up').ifIndex -ServerAddresses ('%DNSa%', '%DNSb%')"
 	GOTO FL
 :FL2
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("%DNSa%") >nul
+	powershell "Set-DnsClientServerAddress -InterfaceIndex (Get-NetAdapter | Where Status -eq 'Up').ifIndex -ServerAddresses ('%DNSa%')"
 	GOTO FL
-:Electro
+:rdns
 	CLS
-	TITLE "Electro DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("78.157.42.101", "78.157.42.100") >nul
-	GOTO FL
-:Shekan
-	CLS
-	TITLE "Shekan DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("178.22.122.100", "185.51.200.2") >nul
-	GOTO FL
-:Radar
-	CLS
-	TITLE "RadarGame DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("10.202.10.10", "10.202.10.11") >nul
-	GOTO FL
-:403
-	CLS
-	TITLE "403 DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("10.202.10.202", "10.202.10.102") >nul
-	GOTO FL
-:Begzar
-	CLS
-	TITLE "Begzar DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("185.55.226.26", "185.55.225.25") >nul
-	GOTO FL
-:Google
-	CLS
-	TITLE "Google DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("8.8.8.8", "8.8.4.4") >nul
-	GOTO FL
-:Cloudflare
-	CLS
-	TITLE "Cloudflare DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("1.1.1.1", "1.0.0.1") >nul
-	GOTO FL
-:AdGuard
-	CLS
-	TITLE "AdGuard DNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("94.140.14.14", "94.140.15.15") >nul
-	GOTO FL
-:OpenDNS
-	CLS
-	TITLE "OpenDNS"
-	wmic nicconfig where (IPEnabled=TRUE) call SetDNSServerSearchOrder ("208.67.222.222", "208.67.220.220") >nul
+	ECHO Loading...
+	powershell "Set-DnsClientServerAddress -InterfaceIndex (Get-NetAdapter | Where Status -eq 'Up').ifIndex -ServerAddresses (%nd%)"
 	GOTO FL
 :M_service
 	TITLE Service Optimization
