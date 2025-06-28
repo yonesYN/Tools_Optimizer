@@ -138,27 +138,37 @@ GOTO Main
 	CLS
 	GOTO M
 :M
-for /f "delims=" %%F in ('powershell -NoProfile -Command "$ap=(Get-NetAdapter | Where Status -eq 'Up' | Sort-Object InterfaceIndex)[0]; $DNS=(Get-DnsClientServerAddress -InterfaceIndex $ap.ifIndex | Where AddressFamily -eq 2).ServerAddresses -join ' - '; Write-Output ($ap.Name + '= ' + $DNS + 'N')"') do (
-    set "full=%%F"
+for /f "delims=" %%F in ('powershell -NoProfile -Command "$ap=(Get-NetAdapter | Where Status -eq 'Up' | Sort-Object InterfaceIndex)[0]; $DNS=(Get-DnsClientServerAddress -InterfaceIndex $ap.ifIndex | Where AddressFamily -eq 2).ServerAddresses -join ' - '; Write-Output ($ap.Name + ': ' + $DNS + 'N')"') do (
+    set "sdns=%%F"
 )
-:E
-	SET "sdns=%full:* =%"
+	SET "inter=%sdns:: =" & rem %
+	SET "sdns=%sdns:*: =%"
 	IF "%sdns%"=="N" (SET "sdns=None"
 GOTO D)
 	SET "sdns=%sdns:N=%"
-	SET "dns1=%sdns:-=" & SET "dns2=%"
+	SET "dns1=%sdns: -=" & SET "dns2=%"
+	SET "name=DNS"
+	IF "%dns1%"=="8.8.8.8" (SET name=Google)
+	IF "%dns1%"=="78.157.42.100" (SET name=Electro)
+	IF "%dns1%"=="178.22.122.100" (SET name=Shekan)
+	IF "%dns1%"=="94.140.14.14" (SET name=AdGuard)
+	IF "%dns1%"=="1.1.1.1" (SET name=Cloudflare)
+	IF "%dns1%"=="10.202.10.10" (SET name=Radar.Game)
+	IF "%dns1%"=="9.9.9.9" (SET name=Quad9)
+	IF "%dns1%"=="209.244.0.3" (SET name=Level3)
+	IF "%dns1%"=="208.67.220.220" (SET name=OpenDNS)
 
 FOR /F "tokens=* USEBACKQ" %%F IN (`ping %dns1% -n 1 -w 1000`) DO (SET ping=%%F)
 	SET "ping=%ping:,="& rem %
 	mode con: cols=83 lines=17
 	CLS
-	IF "%ping:~,1%" == "M" (ECHO %full:N=%		%ping:Minimum =Ping%
+	IF "%ping:~,1%" == "M" (ECHO %name%: %sdns%		%ping:Minimum =Ping%
 GOTO D)
 	ECHO [96mDNS: %sdns:,= - %		Ping=[31mTimeout[96m
 GOTO D
 :D
 	IF "%sdns%"=="None" (ECHO [96mDNS: [31mNone[96m)
-
+	ECHO Interface: %inter%
 	ECHO:
 	ECHO [0] - Default (DHCP)
 	ECHO [1] - Electro
@@ -214,7 +224,7 @@ GOTO D
 :DHCP
 	CLS
 	ECHO Loading...
-	powershell "Get-NetAdapter | Where Status -eq 'Up' | ForEach-Object { Set-NetIPInterface -InterfaceIndex $_.ifIndex -Dhcp Enabled; Set-DnsClientServerAddress -InterfaceIndex $_.ifIndex -ResetServerAddresses}" >nul
+	netsh interface ipv4 set dnsservers name="%inter%" source=dhcp >nul
 	GOTO FL
 :Custom_DNS
 	CLS
@@ -232,15 +242,15 @@ GOTO D
 		IF %DNSb%==m GOTO set_dns
 		IF %DNSb%==M GOTO set_dns
 		IF %DNSb%==o GOTO FL2
-	powershell "Set-DnsClientServerAddress -InterfaceIndex (Get-NetAdapter | Where Status -eq 'Up').ifIndex -ServerAddresses ('%DNSa%', '%DNSb%')"
+	powershell -NoProfile -Command "Set-DnsClientServerAddress -InterfaceAlias '%inter%' -ServerAddresses ('%DNSa%', '%DNSb%')"
 	GOTO FL
 :FL2
-	powershell "Set-DnsClientServerAddress -InterfaceIndex (Get-NetAdapter | Where Status -eq 'Up').ifIndex -ServerAddresses ('%DNSa%')"
+	powershell -NoProfile -Command "Set-DnsClientServerAddress -InterfaceAlias '%inter%' -ServerAddresses ('%DNSa%')"
 	GOTO FL
 :rdns
 	CLS
 	ECHO Loading...
-	powershell "Set-DnsClientServerAddress -InterfaceIndex (Get-NetAdapter | Where Status -eq 'Up').ifIndex -ServerAddresses (%nd%)"
+	powershell -NoProfile -Command "Set-DnsClientServerAddress -InterfaceAlias '%inter%' -ServerAddresses (%nd%)"
 	GOTO FL
 :M_service
 	TITLE Service Optimization
