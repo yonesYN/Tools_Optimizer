@@ -302,7 +302,6 @@ GOTO s
 	sc config NDU start=disabled >nul
 	sc stop CDPSvc >nul
 	sc stop DPS >nul
-	sc stop TokenBroker >nul
 	sc stop WpnService >nul
 	sc stop InstallService >nul
 	sc stop UsoSvc >nul
@@ -825,3 +824,4 @@ sc stop AppXSvc >nul
 sc stop TapiSrv >nul
 sc stop SEMgrSvc >nul
 goto Logo
+
