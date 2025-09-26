@@ -1,9 +1,10 @@
 @ECHO off
+whoami /groups | findstr "S-1-16-12288" >nul && goto :Main
 set "params=%*"
 cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "cmd.exe", "/k cd ""%~sdp0"" && ""%~s0"" %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
-GOTO Main
+
 :Main
-	TITLE %~n0 1.9
+	TITLE %~nx0 1.10
 	COLOR B
 	mode con: cols=83 lines=17
 	CLS
@@ -155,7 +156,7 @@ GOTO D)
 	IF "%dns1%"=="1.1.1.1" (SET name=Cloudflare)
 	IF "%dns1%"=="10.202.10.10" (SET name=Radar.Game)
 	IF "%dns1%"=="9.9.9.9" (SET name=Quad9)
-	IF "%dns1%"=="209.244.0.3" (SET name=Level3)
+	IF "%dns1%"=="76.76.2.5" (SET name=ControlD)
 	IF "%dns1%"=="208.67.220.220" (SET name=OpenDNS)
 
 FOR /F "tokens=* USEBACKQ" %%F IN (`ping %dns1% -n 1 -w 1000`) DO (SET ping=%%F)
@@ -175,7 +176,7 @@ GOTO D
 	ECHO [2] - Shekan
 	ECHO [3] - Radar.Game
 	ECHO [4] - Quad9
-	ECHO [5] - Level3
+	ECHO [5] - ControlD
 	ECHO [6] - Google
 	ECHO [7] - Cloudflare
 	ECHO [8] - AdGuard
@@ -194,7 +195,7 @@ GOTO D
 	GOTO rdns)
 	IF %d%==4 (SET nd='9.9.9.9','149.112.112.112'
 	GOTO rdns)
-	IF %d%==5 (SET nd='209.244.0.3','209.244.0.4'
+	IF %d%==5 (SET nd='76.76.2.5','76.76.10.5'
 	GOTO rdns)
 	IF %d%==6 (SET nd='8.8.8.8','8.8.4.4'
 	GOTO rdns)
@@ -229,7 +230,6 @@ GOTO D
 :Custom_DNS
 	CLS
 	COLOR D
-	TITLE "Custom DNS"
 	ECHO [M] MainMenu
 	SET DNSa=o
 	SET DNSb=o
@@ -338,6 +338,8 @@ GOTO s
 	sc config LanmanWorkstation start=disabled >nul
 	sc config LanmanServer start=disabled >nul
 	sc config Themes start=disabled >nul
+	sc config CDPUserSvc start=disabled >nul
+	sc config PimIndexMaintenanceSvc start=disabled >nul
 	sc stop netprofm >nul
 	sc stop NlaSvc >nul
 	sc stop PSEXESVC >nul
@@ -824,4 +826,3 @@ sc stop AppXSvc >nul
 sc stop TapiSrv >nul
 sc stop SEMgrSvc >nul
 goto Logo
-
