@@ -2,7 +2,6 @@
 whoami /groups | findstr "S-1-16-12288" >nul && goto :Main
 set "params=%*"
 cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "cmd.exe", "/k cd ""%~sdp0"" && ""%~s0"" %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
-
 :Main
 	TITLE %~nx0 1.10
 	COLOR B
@@ -39,6 +38,7 @@ cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) &&
 :r_net
 	mode con: cols=83 lines=17
 	CLS
+	ipconfig /flushdns
 	ipconfig /release
 	ipconfig /flushdns
 	ipconfig /renew
@@ -50,8 +50,8 @@ cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) &&
 	netsh winhttp reset proxy
 	netsh winsock reset proxy
 	netsh winsock reset catalog
-	ipconfig /flushdns
 	netsh int ip reset all
+	netsh int tcp reset all
 	shutdown /r /t 300 /c "It will restart in 5 minutes"
 	GOTO Logo
 :opt_net
@@ -74,21 +74,17 @@ cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) &&
 	netsh int isatap set state disabled
 	netsh int ip set global taskoffload=disabled
 	netsh int tcp set global dca=enabled
-	netsh int tcp set global netdma=enabled
+	netsh int tcp set global netdma=disabled
 	netsh int tcp set global rsc=enabled
 	netsh int tcp set global rss=enabled
 	netsh int ip set global mediasenseeventlog=disabled
-::	netsh int ip set global mldlevel=none
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "DefaultTTL" /t REG_DWORD /d "64" /f
 	reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v "NetworkThrottlingIndex" /t REG_DWORD /d "4294967295" /f
 	reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v "SystemResponsiveness" /t REG_DWORD /d "0" /f
-	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces" /v "TCPDelAckTicks" /t REG_DWORD /d "1" /f
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "TCPDelAckTicks" /t REG_DWORD /d "1" /f
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "TCPNoDelay" /t REG_DWORD /d "1" /f
-	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces" /v "TCPNoDelay" /t REG_DWORD /d "1" /f
 	reg add "HKLM\SOFTWARE\Microsoft\MSMQ\Parameters" /v "TCPNoDelay" /t REG_DWORD /d "1" /f
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "TcpAckFrequency" /t REG_DWORD /d "1" /f
-	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces" /v "TcpAckFrequency" /t REG_DWORD /d "1" /f
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\ServiceProvider" /v "LocalPriority" /t REG_DWORD /d "4" /f
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\ServiceProvider" /v "HostsPriority" /t REG_DWORD /d "5" /f
 	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\ServiceProvider" /v "DnsPriority" /t REG_DWORD /d "6" /f
@@ -100,8 +96,9 @@ cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) &&
 	reg add "HKLM\SYSTEM\CurrentControlSet\services\LanmanServer\Parameters" /v "SharingViolationDelay" /t REG_DWORD /d "0" /f
 	reg add "HKLM\SYSTEM\CurrentControlSet\services\LanmanServer\Parameters" /v "SharingViolationRetries" /t REG_DWORD /d "0" /f
 	reg add "HKLM\System\CurrentControlSet\Services\LanmanServer\Parameters" /v "AutoShareWks" /t REG_DWORD /d "0" /f
-	Reg.exe add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "Tcp1323Opts" /t REG_DWORD /d "1" /f
-	Reg.exe add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "TcpMaxDupAcks" /t REG_DWORD /d "2" /f
+	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "Tcp1323Opts" /t REG_DWORD /d "1" /f
+::	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "TcpWindowSize" /t REG_DWORD /d "64240" /f
+	reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "TcpMaxDupAcks" /t REG_DWORD /d "2" /f
 	netsh winsock set autotuning on
 	powershell -command "Disable-NetAdapterLso -Name *"
 	powershell -command "Disable-NetAdapterPowerManagement -Name *"
@@ -110,13 +107,6 @@ cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) &&
 	powershell -command "Disable-NetAdapterVmq -Name *"
 	powershell -command "ForEach($adapter In Get-NetAdapter){Disable-NetAdapterPowerManagement -Name $adapter.Name -ErrorAction SilentlyContinue}"
 	powershell -command "ForEach($adapter In Get-NetAdapter){Disable-NetAdapterLso -Name $adapter.Name -ErrorAction SilentlyContinue}"
-	CLS
-	ECHO Deleting TMP Files
-	RMDIR "%systemroot%\Prefetch\" /S /Q >nul
-	RMDIR "%systemroot%\Temp\" /S /Q >nul
-	RMDIR "%temp%\" /S /Q >nul
-	RMDIR "%LOCALAPPDATA%\D3DSCache\" /S /Q >nul
-	RMDIR "%LOCALAPPDATA%\CrashDumps\" /S /Q >nul
 	GOTO Logo
 :Logo
 	mode con: cols=83 lines=17
@@ -340,6 +330,9 @@ GOTO s
 	sc config Themes start=disabled >nul
 	sc config CDPUserSvc start=disabled >nul
 	sc config PimIndexMaintenanceSvc start=disabled >nul
+	sc config SensorDataService start=disabled >nul
+	sc config SensrSvc start=disabled >nul
+	sc config SensorService start=disabled >nul
 	sc stop netprofm >nul
 	sc stop NlaSvc >nul
 	sc stop PSEXESVC >nul
